@@ -2,8 +2,9 @@
 //  - Şemayı uygular (prisma db push)
 //  - Kurucu hesabı oluşturur (prisma/seed.mjs)
 //
-// Farklı Vercel/Neon entegrasyonları farklı değişken adları verdiği için
-// birden çok kaynağı sırayla dener.
+// ÖNEMLİ: Bu betik ASLA build'i durdurmaz (her zaman exit 0).
+// Veritabanı bağlı değilse uyarır ama `next build` yine de çalışır.
+// Böylece "Routes Manifest Could Not Be Found" hatası oluşmaz.
 import { spawnSync } from "node:child_process";
 
 function pick(...names) {
@@ -14,7 +15,6 @@ function pick(...names) {
   return "";
 }
 
-// Uygulamanın çalışma anında kullanacağı (genelde pool'lu) bağlantı.
 const appUrl = pick(
   "DATABASE_URL",
   "POSTGRES_PRISMA_URL",
@@ -22,7 +22,6 @@ const appUrl = pick(
   "NEON_DATABASE_URL"
 );
 
-// Şema değişiklikleri için doğrudan (pool'suz) bağlantı tercih edilir.
 const directUrl = pick(
   "DATABASE_URL_UNPOOLED",
   "POSTGRES_URL_NON_POOLING",
@@ -31,40 +30,39 @@ const directUrl = pick(
 );
 
 if (!appUrl) {
-  console.error(
-    "\n❌ DATABASE_URL bulunamadı. Vercel projesine bir Postgres veritabanı ekleyin " +
-      "(Storage → Postgres/Neon). Entegrasyon DATABASE_URL'i otomatik ekler.\n"
+  console.warn(
+    "\n⚠ DATABASE_URL bulunamadı. Vercel projesine bir Postgres veritabanı ekleyin " +
+      "(Storage → Postgres/Neon). Site deploy olur ama veritabanı işlemleri çalışmaz.\n"
   );
-  // Build'i düşürmeyelim; site açılınca DB yapılandırması isteyecektir.
   process.exit(0);
 }
 
-console.log("→ Veritabanı şeması uygulanıyor (prisma db push)...");
-const push = spawnSync(
-  "npx",
-  ["prisma", "db", "push", "--skip-generate"],
-  {
-    stdio: "inherit",
-    env: { ...process.env, DATABASE_URL: directUrl },
-    shell: process.platform === "win32",
+function run(label, cmd, args, url) {
+  try {
+    console.log(`→ ${label}`);
+    const res = spawnSync(cmd, args, {
+      stdio: "inherit",
+      env: { ...process.env, DATABASE_URL: url },
+      shell: process.platform === "win32",
+    });
+    if (res.status !== 0) {
+      console.warn(`⚠ ${label} başarısız oldu (kod ${res.status}). Build devam ediyor.`);
+    }
+    return res.status === 0;
+  } catch (err) {
+    console.warn(`⚠ ${label} hata verdi:`, err?.message ?? err);
+    return false;
   }
-);
-
-if (push.status !== 0) {
-  console.error("❌ prisma db push başarısız oldu.");
-  process.exit(push.status ?? 1);
 }
 
-console.log("→ Kurucu hesabı oluşturuluyor (seed)...");
-const seed = spawnSync("node", ["prisma/seed.mjs"], {
-  stdio: "inherit",
-  env: { ...process.env, DATABASE_URL: appUrl },
-  shell: process.platform === "win32",
-});
+run("Veritabanı şeması uygulanıyor (prisma db push)", "npx", [
+  "prisma",
+  "db",
+  "push",
+  "--skip-generate",
+], directUrl);
 
-if (seed.status !== 0) {
-  console.error("❌ seed başarısız oldu.");
-  process.exit(seed.status ?? 1);
-}
+run("Kurucu hesabı oluşturuluyor (seed)", "node", ["prisma/seed.mjs"], appUrl);
 
-console.log("✓ Veritabanı hazır.");
+console.log("✓ Veritabanı kurulum adımı tamamlandı (hatalar build'i durdurmaz).");
+process.exit(0);

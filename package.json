@@ -11,7 +11,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db push --skip-generate && node prisma/seed.mjs",
     "bootstrap": "node scripts/setup-db.mjs",
-    "vercel-build": "prisma generate && node scripts/setup-db.mjs && next build",
+    "vercel-build": "prisma generate && next build && node scripts/setup-db.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
