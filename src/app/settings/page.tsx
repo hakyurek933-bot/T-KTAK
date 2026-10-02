@@ -24,6 +24,7 @@ export default async function SettingsPage() {
 
       <div className="flex flex-col gap-5">
         <ProfileSettingsForm
+          username={me.username}
           displayName={me.displayName}
           bio={me.bio ?? ""}
           avatarUrl={me.avatarUrl ?? ""}

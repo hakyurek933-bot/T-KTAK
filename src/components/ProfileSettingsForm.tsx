@@ -2,14 +2,17 @@
 
 import { useActionState } from "react";
 import { updateProfileAction, changePasswordAction } from "@/actions/profile";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 type ProfileState = { error?: string; success?: string } | null;
 
 export function ProfileSettingsForm({
+  username,
   displayName,
   bio,
   avatarUrl,
 }: {
+  username: string;
   displayName: string;
   bio: string;
   avatarUrl: string;
@@ -57,15 +60,14 @@ export function ProfileSettingsForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Profil fotoğrafı bağlantısı (URL)</span>
-        <input
-          name="avatarUrl"
-          defaultValue={avatarUrl}
-          placeholder="https://..."
-          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
+      <div className="flex flex-col gap-1.5 text-sm">
+        <span className="text-muted">Profil fotoğrafı</span>
+        <AvatarUpload
+          username={username}
+          displayName={displayName}
+          initialUrl={avatarUrl}
         />
-      </label>
+      </div>
 
       <button
         disabled={pending}

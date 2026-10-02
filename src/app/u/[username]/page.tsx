@@ -5,6 +5,7 @@ import { getCurrentUser, isStaff } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { FollowButton } from "@/components/FollowButton";
+import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { PlayIcon, HeartIcon, GridIcon, LockIcon } from "@/components/icons";
 import { formatCount } from "@/lib/utils";
 
@@ -98,7 +99,7 @@ export default async function ProfilePage({
           <Stat label="Beğeni" value={likedPosts.length} />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           {isMe ? (
             <>
               <Link
@@ -107,6 +108,7 @@ export default async function ProfilePage({
               >
                 Profili düzenle
               </Link>
+              <ShareProfileButton username={user.username} />
               <Link
                 href="/upload"
                 className="rounded-full bg-brand px-6 py-2.5 text-sm font-semibold text-white"
@@ -124,6 +126,7 @@ export default async function ProfilePage({
                 >
                   Mesaj
                 </Link>
+                <ShareProfileButton username={user.username} />
               </>
             )
           )}
