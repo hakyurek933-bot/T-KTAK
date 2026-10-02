@@ -15,6 +15,10 @@ function resolveDatabaseUrl() {
   return undefined;
 }
 
+export function hasDatabaseUrl() {
+  return Boolean(resolveDatabaseUrl());
+}
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

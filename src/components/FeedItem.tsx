@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Avatar } from "@/components/Avatar";
@@ -69,14 +69,10 @@ export function FeedItem({
   const [commentCount, setCommentCount] = useState(post.comments.length);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const viewed = useRef(false);
 
-  // Görüntülenme: sayfa açıldığında bir kez artır.
-  useEffect(() => {
-    if (viewed.current) return;
-    viewed.current = true;
+  function handleVisible() {
     incrementViewAction(post.id).catch(() => {});
-  }, [post.id]);
+  }
 
   function handleLike() {
     if (!currentUserId || isPending) return;
@@ -143,7 +139,11 @@ export function FeedItem({
   return (
     <section className="relative h-full w-full snap-start snap-always overflow-hidden bg-black">
       <div className="absolute inset-0">
-        <VideoPlayer src={post.videoUrl} onDoubleClick={handleLike} />
+        <VideoPlayer
+          src={post.videoUrl}
+          onDoubleClick={handleLike}
+          onFirstVisible={handleVisible}
+        />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />

@@ -13,12 +13,20 @@ export function VideoPlayer({
   src,
   poster,
   onDoubleClick,
+  onFirstVisible,
 }: {
   src: string;
   poster?: string;
   onDoubleClick?: () => void;
+  onFirstVisible?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const seenRef = useRef(false);
+  const visibleRef = useRef(onFirstVisible);
+
+  useEffect(() => {
+    visibleRef.current = onFirstVisible;
+  }, [onFirstVisible]);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -33,6 +41,10 @@ export function VideoPlayer({
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
+            if (!seenRef.current) {
+              seenRef.current = true;
+              visibleRef.current?.();
+            }
             el.play()
               .then(() => setPaused(false))
               .catch(() => setPaused(true));

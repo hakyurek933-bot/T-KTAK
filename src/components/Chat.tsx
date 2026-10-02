@@ -45,7 +45,7 @@ export function Chat({
     let active = true;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/messages?me=${me.id}&other=${other.id}`);
+        const res = await fetch(`/api/messages?other=${other.id}`);
         if (!res.ok) return;
         const data = (await res.json()) as { messages: Message[] };
         if (active) setMessages(data.messages);
@@ -57,7 +57,7 @@ export function Chat({
       active = false;
       clearInterval(interval);
     };
-  }, [me.id, other.id]);
+  }, [other.id]);
 
   // Gelen okunmamışları okundu işaretle.
   useEffect(() => {

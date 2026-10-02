@@ -1,21 +1,34 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const me = searchParams.get("me");
   const other = searchParams.get("other");
 
-  if (!me || !other) {
-    return Response.json({ error: "me ve other gerekli" }, { status: 400 });
+  if (!other) {
+    return Response.json({ error: "other gerekli" }, { status: 400 });
   }
 
-  // Not: Bu, yoklama (polling) için basit bir uçtır. Üretimde oturum
-  // doğrulaması ekleyin veya WebSocket/SSE'ye geçin.
+  const me = await getCurrentUser();
+  if (!me) {
+    return Response.json({ error: "Giriş yapmalısınız." }, { status: 401 });
+  }
+
+  const otherUser = await prisma.user.findUnique({
+    where: { id: other },
+    select: { id: true },
+  });
+  if (!otherUser) {
+    return Response.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+  }
+
   const messages = await prisma.message.findMany({
     where: {
       OR: [
-        { senderId: me, receiverId: other },
-        { senderId: other, receiverId: me },
+        { senderId: me.id, receiverId: otherUser.id },
+        { senderId: otherUser.id, receiverId: me.id },
       ],
     },
     orderBy: { createdAt: "asc" },

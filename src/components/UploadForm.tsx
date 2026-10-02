@@ -22,10 +22,11 @@ export function UploadForm() {
     setUploading(true);
     setProgress(0);
     try {
-      const blob = await upload(`videos/${Date.now()}-${file.name}`, file, {
+      const pathname = createBlobPathname(file);
+      const blob = await upload(pathname, file, {
         access: "public",
         handleUploadUrl: "/api/upload",
-        contentType: file.type,
+        ...(file.type ? { contentType: file.type } : {}),
         onUploadProgress: (e) => setProgress(Math.round(e.percentage)),
       });
       setVideoUrl(blob.url);
@@ -36,6 +37,26 @@ export function UploadForm() {
     } finally {
       setUploading(false);
     }
+  }
+
+  function createBlobPathname(file: File) {
+    const fromName = (file.name.split(/[\\/]/).pop() || "").toLowerCase();
+    const nameExt = fromName.includes(".")
+      ? fromName.slice(fromName.lastIndexOf("."))
+      : "";
+    const typeExt =
+      file.type === "video/mp4"
+        ? ".mp4"
+        : file.type === "video/webm"
+          ? ".webm"
+          : file.type === "video/quicktime"
+            ? ".mov"
+            : file.type === "video/ogg"
+              ? ".ogv"
+              : "";
+    const ext = (nameExt || typeExt || ".mp4").replace(/[^a-z0-9.]/g, "").slice(0, 5);
+    const random = Math.random().toString(36).slice(2, 10);
+    return `videos/${Date.now()}-${random}${ext.startsWith(".") ? ext : `.${ext}`}`;
   }
 
   return (

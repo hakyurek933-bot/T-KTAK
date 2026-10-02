@@ -62,6 +62,13 @@ run("Veritabanı şeması uygulanıyor (prisma db push)", "npx", [
   "--skip-generate",
 ], directUrl);
 
+if (directUrl === appUrl && /pooler|pgbouncer=true/i.test(appUrl)) {
+  console.warn(
+    "⚠ Bağlantı havuzlu (pooler) görünüyor. Şema kurulumu için havuzsuz " +
+      "bağlantıyı DATABASE_URL_UNPOOLED olarak tanımlayın."
+  );
+}
+
 run("Kurucu hesabı oluşturuluyor (seed)", "node", ["prisma/seed.mjs"], appUrl);
 
 console.log("✓ Veritabanı kurulum adımı tamamlandı (hatalar build'i durdurmaz).");
