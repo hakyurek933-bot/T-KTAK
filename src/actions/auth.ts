@@ -197,6 +197,83 @@ const resendSchema = z.object({
   email: z.string().trim().toLowerCase().email("Geçerli bir e-posta girin"),
 });
 
+export async function requestLoginCodeAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const parsed = resendSchema.safeParse({
+    email: String(formData.get("email") || ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçerli bir e-posta girin" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  // Hesap yoksa da aynı mesaj (bilgi sızdırmama).
+  if (!user) return { error: "Kod gönderilemediyse e-postanı kontrol et" };
+  if (user.banned) {
+    return {
+      error: `Hesabınız askıya alınmış. Sebep: ${user.bannedReason || "belirtilmedi"}`,
+    };
+  }
+
+  if (!emailProviderConfigured()) {
+    return { error: "E-posta servisi kurulu değil, yöneticiyle iletişime geçin" };
+  }
+
+  const loginLimit = rateLimit(`logincode:${parsed.data.email}`, 3, 10 * 60 * 1000);
+  if (!loginLimit.ok) {
+    return { error: "Kodu zaten gönderdik. Birkaç dakika bekleyip tekrar deneyin." };
+  }
+
+  const code = await storeVerificationCode(parsed.data.email);
+  try {
+    await sendVerificationEmail(parsed.data.email, code);
+  } catch (err) {
+    console.error(err);
+    return { error: "Kod gönderilemedi, sonra tekrar deneyin" };
+  }
+  redirect(`/verify?email=${encodeURIComponent(parsed.data.email)}&mode=login`);
+}
+
+export async function loginWithCodeAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const parsed = verifySchema.safeParse({
+    email: String(formData.get("email") || ""),
+    code: String(formData.get("code") || ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz kod" };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  if (!user) return { error: "Kod hatalı veya süresi dolmuş" };
+  if (user.banned) {
+    return {
+      error: `Hesabınız askıya alınmış. Sebep: ${user.bannedReason || "belirtilmedi"}`,
+    };
+  }
+
+  const ok = await checkVerificationCode(parsed.data.email, parsed.data.code);
+  if (!ok) return { error: "Kod hatalı veya süresi dolmuş" };
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true },
+  });
+  await clearVerificationCodes(parsed.data.email);
+
+  await createSession({ userId: user.id, role: user.role });
+  await createLog({
+    action: "LOGIN",
+    actorId: user.id,
+    detail: `@${user.username} e-posta koduyla giriş yaptı`,
+  });
+  redirect("/");
+}
+
 export async function resendCodeAction(
   _prev: ActionState,
   formData: FormData

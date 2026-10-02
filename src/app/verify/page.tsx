@@ -12,15 +12,18 @@ export default async function VerifyPage({ searchParams }: PageProps<"/verify">)
   const sp = await searchParams;
   const email = typeof sp.email === "string" ? sp.email : "";
   if (!email) redirect("/signup");
+  const mode = sp.mode === "login" ? "login" : "signup";
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
-      <h1 className="mb-1 text-2xl font-bold">E-postanı doğrula</h1>
+      <h1 className="mb-1 text-2xl font-bold">
+        {mode === "login" ? "Kodla giriş yap" : "E-postanı doğrula"}
+      </h1>
       <p className="mb-8 text-sm text-muted">
         <span className="text-white">{email}</span> adresine 6 haneli bir kod
         gönderdik. Kod 15 dakika geçerli.
       </p>
-      <VerifyForm email={email} />
+      <VerifyForm email={email} mode={mode} />
     </div>
   );
 }

@@ -3,14 +3,15 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import {
+  loginWithCodeAction,
   resendCodeAction,
   verifyEmailAction,
   type ActionState,
 } from "@/actions/auth";
 
-export function VerifyForm({ email }: { email: string }) {
+export function VerifyForm({ email, mode = "signup" }: { email: string; mode?: "signup" | "login" }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
-    verifyEmailAction,
+    mode === "login" ? loginWithCodeAction : verifyEmailAction,
     null
   );
   const [resendState, resendAction, resending] = useActionState<
@@ -42,7 +43,7 @@ export function VerifyForm({ email }: { email: string }) {
           disabled={pending}
           className="rounded-xl bg-brand py-2.5 font-semibold text-white disabled:opacity-60"
         >
-          {pending ? "Doğrulanıyor..." : "Doğrula"}
+          {pending ? "Doğrulanıyor..." : mode === "login" ? "Giriş yap" : "Doğrula"}
         </button>
       </form>
 
