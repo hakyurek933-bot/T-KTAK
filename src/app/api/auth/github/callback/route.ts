@@ -85,6 +85,16 @@ export async function GET(request: Request) {
 
   let user = await prisma.user.findFirst({
     where: { OR: [{ githubId: String(g.id) }, { email: normalized }] },
+    select: {
+      id: true,
+      username: true,
+      role: true,
+      githubId: true,
+      emailVerified: true,
+      avatarUrl: true,
+      banned: true,
+      bannedReason: true,
+    },
   });
 
   if (!user) {
@@ -93,7 +103,10 @@ export async function GET(request: Request) {
       "kullanici";
     let username = base;
     for (let i = 1; i < 50; i++) {
-      const taken = await prisma.user.findUnique({ where: { username } });
+      const taken = await prisma.user.findUnique({
+        where: { username },
+        select: { id: true },
+      });
       if (!taken) break;
       username = `${base}${i}`;
     }

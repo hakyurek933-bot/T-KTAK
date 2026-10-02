@@ -24,7 +24,14 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
           ],
         },
         take: 20,
-        include: { _count: { select: { posts: true, followers: true } } },
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+          role: true,
+          _count: { select: { posts: true, followers: true } },
+        },
       })
     : [];
 

@@ -31,7 +31,10 @@ export async function banUserAction(
   });
   if (!parsed.success) return { error: "Geçersiz istek." };
 
-  const target = await prisma.user.findUnique({ where: { id: parsed.data.userId } });
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true, username: true, role: true },
+  });
   if (!target) return { error: "Kullanıcı bulunamadı." };
   if (target.id === staff.id) return { error: "Kendinizi banlayamazsınız." };
 
@@ -79,7 +82,10 @@ export async function unbanUserAction(
   });
   if (!parsed.success) return { error: "Geçersiz istek." };
 
-  const target = await prisma.user.findUnique({ where: { id: parsed.data.userId } });
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true, username: true },
+  });
   if (!target) return { error: "Kullanıcı bulunamadı." };
 
   await prisma.user.update({
@@ -126,7 +132,10 @@ export async function changeRoleAction(
   });
   if (!parsed.success) return { error: "Geçersiz rol." };
 
-  const target = await prisma.user.findUnique({ where: { id: parsed.data.userId } });
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true, username: true, role: true },
+  });
   if (!target) return { error: "Kullanıcı bulunamadı." };
   if (target.id === staff.id) return { error: "Kendi rolünüzü değiştiremezsiniz." };
 

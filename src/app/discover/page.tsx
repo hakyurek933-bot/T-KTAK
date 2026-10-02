@@ -21,7 +21,13 @@ export default async function DiscoverPage() {
     prisma.user.findMany({
       orderBy: { createdAt: "asc" },
       take: 10,
-      include: { _count: { select: { posts: true } } },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        _count: { select: { posts: true } },
+      },
     }),
     Promise.all([
       prisma.post.count(),

@@ -34,6 +34,7 @@ export async function sendMessageAction(input: {
 
   const receiver = await prisma.user.findUnique({
     where: { id: parsed.data.receiverId },
+    select: { id: true, username: true, banned: true },
   });
   if (!receiver) return { error: "Kullanıcı bulunamadı" };
   if (receiver.banned) return { error: "Bu kullanıcı askıya alınmış" };

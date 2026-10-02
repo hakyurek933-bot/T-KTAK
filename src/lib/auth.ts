@@ -67,12 +67,27 @@ export async function getSession(): Promise<SessionPayload | null> {
   }
 }
 
-/** Oturum açmış kullanıcıyı veritabanından çeker. Banlıysa null döner. */
+/** Oturum açmış kullanıcıyı veritabanından çeker. Banlıysa null döner.
+ * Bilerek SADECE stabil kolonları seçer: şemada yeni eklenen bir kolon
+ * prod DB'ye henüz işlenmemişse bile sitenin tamamı çökmez. */
 export async function getCurrentUser() {
   const session = await getSession();
   if (!session) return null;
 
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      role: true,
+      bio: true,
+      banned: true,
+      bannedReason: true,
+      createdAt: true,
+    },
+  });
   if (!user || user.banned) return null;
   return user;
 }

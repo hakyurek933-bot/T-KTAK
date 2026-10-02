@@ -9,7 +9,10 @@ export async function toggleFollowAction(targetId: string) {
   const user = await requireUser();
   if (user.id === targetId) return { following: false, followers: 0 };
 
-  const target = await prisma.user.findUnique({ where: { id: targetId } });
+  const target = await prisma.user.findUnique({
+    where: { id: targetId },
+    select: { id: true, username: true },
+  });
   if (!target) throw new Error("Kullanıcı bulunamadı");
 
   const existing = await prisma.follow.findUnique({

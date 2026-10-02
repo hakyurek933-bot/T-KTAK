@@ -63,6 +63,7 @@ export async function signupAction(
 
   const exists = await prisma.user.findFirst({
     where: { OR: [{ username }, { email }] },
+    select: { id: true },
   });
   if (exists) return { error: "Bu kullanıcı adı veya e-posta zaten kullanılıyor" };
 
@@ -124,8 +125,32 @@ export async function loginAction(
 
   const identifier = parsed.data.identifier.toLowerCase();
   const user = identifier.includes("@")
-    ? await prisma.user.findUnique({ where: { email: identifier } })
-    : await prisma.user.findUnique({ where: { username: identifier } });
+    ? await prisma.user.findUnique({
+        where: { email: identifier },
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          passwordHash: true,
+          banned: true,
+          bannedReason: true,
+          email: true,
+          emailVerified: true,
+        },
+      })
+    : await prisma.user.findUnique({
+        where: { username: identifier },
+        select: {
+          id: true,
+          username: true,
+          role: true,
+          passwordHash: true,
+          banned: true,
+          bannedReason: true,
+          email: true,
+          emailVerified: true,
+        },
+      });
 
   // Kullanıcı yoksa da aynı mesajı ver (bilgi sızdırmama).
   if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
@@ -166,7 +191,10 @@ export async function verifyEmailAction(
     return { error: parsed.error.issues[0]?.message || "Geçersiz kod" };
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { id: true, username: true, role: true, emailVerified: true },
+  });
   if (!user) return { error: "Bu e-postayla hesap bulunamadı" };
   if (user.emailVerified) redirect("/login");
 
@@ -208,7 +236,10 @@ export async function requestLoginCodeAction(
     return { error: parsed.error.issues[0]?.message || "Geçerli bir e-posta girin" };
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { id: true, banned: true, bannedReason: true },
+  });
   // Hesap yoksa da aynı mesaj (bilgi sızdırmama).
   if (!user) return { error: "Kod gönderilemediyse e-postanı kontrol et" };
   if (user.banned) {
@@ -248,7 +279,10 @@ export async function loginWithCodeAction(
     return { error: parsed.error.issues[0]?.message || "Geçersiz kod" };
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { id: true, username: true, role: true, banned: true, bannedReason: true },
+  });
   if (!user) return { error: "Kod hatalı veya süresi dolmuş" };
   if (user.banned) {
     return {
@@ -285,7 +319,10 @@ export async function resendCodeAction(
     return { error: parsed.error.issues[0]?.message || "Geçersiz e-posta" };
   }
 
-  const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
+  const user = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    select: { id: true, emailVerified: true },
+  });
   if (!user) return { error: "Bu e-postayla hesap bulunamadı" };
   if (user.emailVerified) redirect("/login");
 

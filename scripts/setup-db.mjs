@@ -2,9 +2,12 @@
 //  - Şemayı uygular (prisma db push)
 //  - Kurucu hesabı oluşturur (prisma/seed.mjs)
 //
-// ÖNEMLİ: Bu betik ASLA build'i durdurmaz (her zaman exit 0).
-// Veritabanı bağlı değilse uyarır ama `next build` yine de çalışır.
-// Böylece "Routes Manifest Could Not Be Found" hatası oluşmaz.
+// Davranış:
+//  - Veritabanı bağlı DEĞİLSE: uyarır ama build'i durdurmaz (exit 0).
+//    Böylece ilk kurulumda "Routes Manifest Could Not Be Found" oluşmaz.
+//  - Veritabanı bağlıysa AMA şema/seed başarısızsa: build'i BİLEREK
+//    düşürür (exit 1). Sessiz geçilirse prod DB eski şemayla kalır ve
+//    tüm site 500 verir — asıl felaket budur.
 import { spawnSync } from "node:child_process";
 
 function pick(...names) {
@@ -46,12 +49,17 @@ function run(label, cmd, args, url) {
       shell: process.platform === "win32",
     });
     if (res.status !== 0) {
-      console.warn(`⚠ ${label} başarısız oldu (kod ${res.status}). Build devam ediyor.`);
+      console.error(`\n❌❌❌ ${label} BAŞARISIZ OLDU (kod ${res.status}).`);
+      console.error(
+        "Veritabanı bağlı ama şema uygulanamadı. Deploy durduruluyor — " +
+          "yoksa site eski şemayla 500 verir.\n"
+      );
+      process.exit(res.status ?? 1);
     }
-    return res.status === 0;
+    return true;
   } catch (err) {
-    console.warn(`⚠ ${label} hata verdi:`, err?.message ?? err);
-    return false;
+    console.error(`\n❌❌❌ ${label} hata verdi:`, err?.message ?? err);
+    process.exit(1);
   }
 }
 
@@ -71,5 +79,5 @@ if (directUrl === appUrl && /pooler|pgbouncer=true/i.test(appUrl)) {
 
 run("Kurucu hesabı oluşturuluyor (seed)", "node", ["prisma/seed.mjs"], appUrl);
 
-console.log("✓ Veritabanı kurulum adımı tamamlandı (hatalar build'i durdurmaz).");
+console.log("✓ Veritabanı kurulum adımı tamamlandı.");
 process.exit(0);

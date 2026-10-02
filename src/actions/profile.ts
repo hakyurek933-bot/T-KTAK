@@ -71,7 +71,11 @@ export async function changePasswordAction(
     return { error: parsed.error.issues[0]?.message || "Geçersiz şifre" };
   }
 
-  const ok = await verifyPassword(parsed.data.current, user.passwordHash);
+  const account = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { passwordHash: true },
+  });
+  const ok = account && (await verifyPassword(parsed.data.current, account.passwordHash));
   if (!ok) return { error: "Mevcut şifre hatalı" };
 
   await prisma.user.update({
