@@ -1,13 +1,18 @@
 import { hasDatabaseUrl, prisma } from "@/lib/prisma";
+import { getCurrentUser, isStaff } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Dağıtım tanılama ucu. Gizli değerleri asla döndürmez; yalnızca
- * gerekli ortam değişkenlerinin tanımlı olup olmadığını ve
- * veritabanına erişilip erişilemediğini bildirir.
+ * Dağıtım tanılama ucu. Yalnızca yönetici ekibi görebilir;
+ * diğerleri 404 alır. Gizli değerleri asla döndürmez.
  */
 export async function GET() {
+  const me = await getCurrentUser().catch(() => null);
+  if (!me || !isStaff(me.role)) {
+    return Response.json({ error: "Bulunamadı" }, { status: 404 });
+  }
+
   const env = {
     database: hasDatabaseUrl(),
     authSecret: Boolean(process.env.AUTH_SECRET),
