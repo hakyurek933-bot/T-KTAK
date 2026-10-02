@@ -5,7 +5,7 @@ import { RoleTag } from "@/components/RoleTag";
 import { PlayIcon, HeartIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Keşfet — Taktok" };
+export const metadata = { title: "Keşfet — Taktik" };
 
 export default async function DiscoverPage() {
   const [posts, creators, tags] = await Promise.all([

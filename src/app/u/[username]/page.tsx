@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/u/[username]">) {
   const { username } = await params;
-  return { title: `@${username} — Taktok` };
+  return { title: `@${username} — Taktik` };
 }
 
 export default async function ProfilePage({

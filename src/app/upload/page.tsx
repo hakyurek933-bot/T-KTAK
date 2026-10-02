@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { UploadForm } from "@/components/UploadForm";
 
-export const metadata = { title: "Video yükle — Taktok" };
+export const metadata = { title: "Video yükle — Taktik" };
 
 export default async function UploadPage() {
   const user = await getCurrentUser();

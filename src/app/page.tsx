@@ -75,7 +75,7 @@ export default async function HomePage({
             T
           </div>
           <h2 className="mt-5 text-2xl font-bold">
-            {tab === "following" ? "Takip ettiklerin henüz video paylaşmadı" : "Taktok'a hoş geldin"}
+            {tab === "following" ? "Takip ettiklerin henüz video paylaşmadı" : "Taktik'a hoş geldin"}
           </h2>
           <p className="mt-2 max-w-sm text-sm text-muted">
             {tab === "following"

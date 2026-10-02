@@ -9,7 +9,7 @@ export async function generateMetadata({
   params,
 }: PageProps<"/u/[username]/followers">) {
   const { username } = await params;
-  return { title: `@${username} takipçileri — Taktok` };
+  return { title: `@${username} takipçileri — Taktik` };
 }
 
 export default async function FollowersPage({

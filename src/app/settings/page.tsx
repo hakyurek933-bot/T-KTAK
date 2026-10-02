@@ -7,7 +7,7 @@ import {
 } from "@/components/ProfileSettingsForm";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Ayarlar — Taktok" };
+export const metadata = { title: "Ayarlar — Taktik" };
 
 export default async function SettingsPage() {
   const me = await getCurrentUser();

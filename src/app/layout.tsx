@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Taktok — Yerli kısa video & mesaj",
-  description: "Taktok: kısa video paylaş, keşfet ve mesajlaş. Yerli TikTok.",
+  title: "Taktik — Yerli kısa video & mesaj",
+  description: "Taktik: kısa video paylaş, keşfet ve mesajlaş. Yerli TikTok.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

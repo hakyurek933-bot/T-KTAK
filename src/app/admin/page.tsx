@@ -11,7 +11,7 @@ import { LOG_ACTION_LABELS } from "@/lib/log";
 import { timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Yönetim — Taktok" };
+export const metadata = { title: "Yönetim — Taktik" };
 
 export default async function AdminPage() {
   const me = await getCurrentUser();

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@prisma/client";
 
-const COOKIE_NAME = "Taktok_session";
+const COOKIE_NAME = "Taktik_session";
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 gün
 
 function getSecret() {

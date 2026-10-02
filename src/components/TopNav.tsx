@@ -18,11 +18,11 @@ export async function TopNav() {
 
   return (
     <header className="z-30 flex items-center gap-3 border-b border-white/10 bg-ink px-3 py-2.5 sm:px-4">
-      <Link href="/" className="flex shrink-0 items-center gap-1.5" aria-label="Taktok">
+      <Link href="/" className="flex shrink-0 items-center gap-1.5" aria-label="Taktik">
         <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-brand to-brand-2 text-sm font-black text-ink">
           T
         </span>
-        <span className="hidden text-lg font-extrabold tracking-tight sm:block">Taktok</span>
+        <span className="hidden text-lg font-extrabold tracking-tight sm:block">Taktik</span>
       </Link>
 
       <div className="mx-auto hidden w-full max-w-sm md:block">

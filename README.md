@@ -1,4 +1,4 @@
-# Taktok 🎬💬
+# Taktik 🎬💬
 
 Yerli TikTok — kısa video paylaşımı + mesajlaşma platformu. **Kurucu tag'i**, **ban paneli** ve **log paneli** dahil. Vercel'de çalışacak şekilde yapılandırıldı.
 
@@ -36,7 +36,7 @@ Yerli TikTok — kısa video paylaşımı + mesajlaşma platformu. **Kurucu tag'
    ```bash
    git init
    git add .
-   git commit -m "Taktok"
+   git commit -m "Taktik"
    git branch -M main
    git remote add origin <repo-adresi>
    git push -u origin main

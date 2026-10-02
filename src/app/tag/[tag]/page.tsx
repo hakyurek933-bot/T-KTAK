@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/tag/[tag]">) {
   const { tag } = await params;
-  return { title: `#${tag} — Taktok` };
+  return { title: `#${tag} — Taktik` };
 }
 
 export default async function TagPage({ params }: PageProps<"/tag/[tag]">) {

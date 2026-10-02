@@ -8,7 +8,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { PlayIcon, HeartIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Ara — Taktok" };
+export const metadata = { title: "Ara — Taktik" };
 
 export default async function SearchPage({ searchParams }: PageProps<"/search">) {
   const sp = await searchParams;

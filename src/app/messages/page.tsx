@@ -7,7 +7,7 @@ import { RoleTag } from "@/components/RoleTag";
 import { timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mesajlar — Taktok" };
+export const metadata = { title: "Mesajlar — Taktik" };
 
 export default async function MessagesPage() {
   const me = await getCurrentUser();

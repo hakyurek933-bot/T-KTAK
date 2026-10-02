@@ -32,7 +32,7 @@ async function main() {
       displayName: process.env.FOUNDER_DISPLAY_NAME || "Kurucu",
       passwordHash,
       role: "FOUNDER",
-      bio: "Taktok kurucusu.",
+      bio: "Taktik kurucusu.",
     },
   });
   console.log(`✓ Kurucu hazır: @${founder.username}`);
@@ -66,9 +66,9 @@ async function main() {
     console.log(`✓ ${members.length} örnek üye eklendi (şifre: uyem1234)`);
 
     const sampleVideos = [
-      { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", caption: "İlk videom! 🎬 #taktok" },
+      { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", caption: "İlk videom! 🎬 #Taktik" },
       { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", caption: "Bugün hava harika ☀️ #keşfet" },
-      { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4", caption: "Kaçış zamanı 🏃 #taktok" },
+      { url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4", caption: "Kaçış zamanı 🏃 #Taktik" },
     ];
     if ((await prisma.post.count()) === 0) {
       const createdPosts = [];

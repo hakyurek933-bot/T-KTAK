@@ -8,7 +8,7 @@ import { timeAgo } from "@/lib/utils";
 import { HeartIcon, CommentIcon, PlusIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Bildirimler — Taktok" };
+export const metadata = { title: "Bildirimler — Taktik" };
 
 const TEXT: Record<string, string> = {
   LIKE: "videonu beğendi",

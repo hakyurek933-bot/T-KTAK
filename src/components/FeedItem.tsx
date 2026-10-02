@@ -125,7 +125,7 @@ export function FeedItem({
     const url = `${window.location.origin}/?v=${post.id}`;
     try {
       if (navigator.share) {
-        await navigator.share({ url, title: `@${post.author.username} - Taktok` });
+        await navigator.share({ url, title: `@${post.author.username} - Taktik` });
         return;
       }
       await navigator.clipboard.writeText(url);

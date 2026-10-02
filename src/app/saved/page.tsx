@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { PlayIcon, HeartIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Kaydedilenler — Taktok" };
+export const metadata = { title: "Kaydedilenler — Taktik" };
 
 export default async function SavedPage() {
   const me = await getCurrentUser();

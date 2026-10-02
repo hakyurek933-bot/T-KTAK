@@ -1,4 +1,4 @@
-// Prisma şeması — Taktok (yerli TikTok benzeri platform)
+// Prisma şeması — Taktik (yerli TikTok benzeri platform)
 // Üretimde PostgreSQL (Vercel Postgres / Neon / Supabase) kullanılır.
 
 generator client {
