@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { createLog } from "@/lib/log";
+import { rateLimit } from "@/lib/ratelimit";
 
 const sendSchema = z.object({
   receiverId: z.string().min(1),
@@ -16,6 +17,11 @@ export async function sendMessageAction(input: {
   body: string;
 }): Promise<{ error?: string; ok?: boolean }> {
   const user = await requireUser();
+
+  const msgLimit = rateLimit(`message:${user.id}`, 60, 60 * 1000);
+  if (!msgLimit.ok) {
+    return { error: "Çok hızlı mesaj gönderiyorsun. Biraz yavaşla." };
+  }
 
   const parsed = sendSchema.safeParse(input);
   if (!parsed.success) {

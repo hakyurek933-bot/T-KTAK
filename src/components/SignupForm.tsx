@@ -57,6 +57,15 @@ export function SignupForm() {
           className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
         />
       </label>
+      {/* Bot tuzağı: gerçek kullanıcılar görmez, botlar doldurur. */}
+      <input
+        name="website"
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute h-0 w-0 overflow-hidden opacity-0"
+      />
       <button
         disabled={pending}
         className="mt-1 rounded-xl bg-brand py-2.5 font-semibold text-white transition hover:bg-brand/90 disabled:opacity-60"

@@ -18,6 +18,7 @@ import {
   sendVerificationEmail,
   storeVerificationCode,
 } from "@/lib/email";
+import { clientIp, rateLimit } from "@/lib/ratelimit";
 
 export type ActionState = { error?: string } | null;
 
@@ -48,6 +49,17 @@ export async function signupAction(
   }
 
   const { username, displayName, email, password } = parsed.data;
+
+  // Bot tuzağı: gizli alan doluysa isteği sessizce düşür.
+  if (String(formData.get("website") || "").trim()) {
+    redirect("/login");
+  }
+
+  const ip = await clientIp();
+  const signupLimit = rateLimit(`signup:${ip}`, 10, 60 * 60 * 1000);
+  if (!signupLimit.ok) {
+    return { error: "Çok fazla kayıt denemesi. Bir süre sonra tekrar deneyin." };
+  }
 
   const exists = await prisma.user.findFirst({
     where: { OR: [{ username }, { email }] },
@@ -104,6 +116,12 @@ export async function loginAction(
   });
   if (!parsed.success) return { error: "Kullanıcı adı ve şifre gerekli" };
 
+  const ip = await clientIp();
+  const loginLimit = rateLimit(`login:${ip}`, 20, 5 * 60 * 1000);
+  if (!loginLimit.ok) {
+    return { error: "Çok fazla giriş denemesi. Birkaç dakika bekleyip tekrar deneyin." };
+  }
+
   const identifier = parsed.data.identifier.toLowerCase();
   const user = identifier.includes("@")
     ? await prisma.user.findUnique({ where: { email: identifier } })
@@ -152,6 +170,11 @@ export async function verifyEmailAction(
   if (!user) return { error: "Bu e-postayla hesap bulunamadı" };
   if (user.emailVerified) redirect("/login");
 
+  const emailLimit = rateLimit(`verify:${parsed.data.email}`, 10, 10 * 60 * 1000);
+  if (!emailLimit.ok) {
+    return { error: "Çok fazla deneme. Birkaç dakika bekleyip tekrar deneyin." };
+  }
+
   const ok = await checkVerificationCode(parsed.data.email, parsed.data.code);
   if (!ok) return { error: "Kod hatalı veya süresi dolmuş" };
 
@@ -191,6 +214,11 @@ export async function resendCodeAction(
 
   if (!emailProviderConfigured()) {
     return { error: "E-posta servisi kurulu değil, yöneticiyle iletişime geçin" };
+  }
+
+  const resendLimit = rateLimit(`resend:${parsed.data.email}`, 3, 10 * 60 * 1000);
+  if (!resendLimit.ok) {
+    return { error: "Kodu zaten gönderdik. Birkaç dakika bekleyip tekrar deneyin." };
   }
 
   const code = await storeVerificationCode(parsed.data.email);

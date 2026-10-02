@@ -1,10 +1,22 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getCurrentUser } from "@/lib/auth";
+import { ipFromRequest, rateLimit } from "@/lib/ratelimit";
 
+export const dynamic = "force-dynamic";
+
+/** Video yükleme ucu (en fazla 50 MB, saatte kullanıcı başına sınırlı). */
 export async function POST(request: Request): Promise<Response> {
   const body = (await request.json()) as HandleUploadBody;
 
   try {
+    const tokenLimit = rateLimit(`upload:${ipFromRequest(request)}`, 30, 60 * 60 * 1000);
+    if (!tokenLimit.ok) {
+      return Response.json(
+        { error: "Yükleme sınırı aşıldı. Bir süre sonra tekrar deneyin." },
+        { status: 429 }
+      );
+    }
+
     const jsonResponse = await handleUpload({
       body,
       request,
