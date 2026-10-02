@@ -1,0 +1,202 @@
+// Prisma şeması — Taktok (yerli TikTok benzeri platform)
+// Üretimde PostgreSQL (Vercel Postgres / Neon / Supabase) kullanılır.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Roller: FOUNDER (kurucu), MOD (moderatör), USER (normal)
+enum Role {
+  FOUNDER
+  MOD
+  USER
+}
+
+enum LogAction {
+  SIGNUP
+  LOGIN
+  LOGOUT
+  POST_CREATE
+  POST_DELETE
+  COMMENT_CREATE
+  COMMENT_DELETE
+  MESSAGE_SEND
+  BAN
+  UNBAN
+  ROLE_CHANGE
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  REPLY
+  FOLLOW
+  MENTION
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName  String
+  passwordHash String
+  role         Role     @default(USER)
+  bio          String?
+  avatarUrl    String?
+  banned       Boolean  @default(false)
+  bannedReason String?
+  bannedAt     DateTime?
+  createdAt    DateTime @default(now())
+
+  posts             Post[]
+  likes             Like[]
+  comments          Comment[]
+  bookmarks         Bookmark[]
+  commentLikes      CommentLike[]
+  sentMessages      Message[]    @relation("SentMessages")
+  receivedMessages  Message[]    @relation("ReceivedMessages")
+  logs              Log[]        @relation("ActorLogs")
+  targetLogs        Log[]        @relation("TargetLogs")
+
+  // Takip sistemi
+  following         Follow[]     @relation("Following")
+  followers         Follow[]     @relation("Followers")
+
+  // Bildirimler
+  notifications     Notification[] @relation("ReceivedNotifications")
+  sentNotifications Notification[] @relation("SentNotifications")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  videoUrl  String
+  caption   String?
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes     Like[]
+  comments  Comment[]
+  bookmarks Bookmark[]
+
+  @@index([createdAt])
+  @@index([authorId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?
+  body      String
+  createdAt DateTime @default(now())
+
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[]     @relation("CommentReplies")
+  likes   CommentLike[]
+
+  @@index([postId])
+  @@index([parentId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  actorId   String
+  type      NotificationType
+  postId    String?
+  commentId String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user  User @relation("ReceivedNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User @relation("SentNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([createdAt])
+}
+
+model Log {
+  id        String    @id @default(cuid())
+  action    LogAction
+  detail    String?
+  actorId   String?
+  targetId  String?
+  createdAt DateTime  @default(now())
+
+  actor  User? @relation("ActorLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  target User? @relation("TargetLogs", fields: [targetId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}

@@ -1,0 +1,121 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { requireUser, isStaff } from "@/lib/auth";
+import { createLog } from "@/lib/log";
+import { notify } from "@/lib/notify";
+
+const commentSchema = z.object({
+  postId: z.string().min(1),
+  parentId: z.string().optional(),
+  body: z.string().trim().min(1, "Yorum boş olamaz").max(280, "Yorum çok uzun"),
+});
+
+export async function addCommentAction(
+  _prev: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string } | null> {
+  const user = await requireUser();
+
+  const parsed = commentSchema.safeParse({
+    postId: String(formData.get("postId") || ""),
+    parentId: String(formData.get("parentId") || "") || undefined,
+    body: String(formData.get("body") || ""),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || "Geçersiz yorum" };
+  }
+
+  const post = await prisma.post.findUnique({
+    where: { id: parsed.data.postId },
+    select: { authorId: true },
+  });
+  if (!post) return { error: "Video bulunamadı" };
+
+  const comment = await prisma.comment.create({
+    data: {
+      postId: parsed.data.postId,
+      authorId: user.id,
+      parentId: parsed.data.parentId ?? null,
+      body: parsed.data.body,
+    },
+  });
+
+  await createLog({
+    action: "COMMENT_CREATE",
+    actorId: user.id,
+    detail: `@${user.username} yorum yaptı`,
+  });
+
+  // Yorum sahibine bildirim (yanıt ise yanıt bildirimi).
+  if (parsed.data.parentId) {
+    const parent = await prisma.comment.findUnique({
+      where: { id: parsed.data.parentId },
+      select: { authorId: true },
+    });
+    if (parent) {
+      await notify({
+        userId: parent.authorId,
+        actorId: user.id,
+        type: "REPLY",
+        postId: parsed.data.postId,
+        commentId: comment.id,
+      });
+    }
+  } else {
+    await notify({
+      userId: post.authorId,
+      actorId: user.id,
+      type: "COMMENT",
+      postId: parsed.data.postId,
+      commentId: comment.id,
+    });
+  }
+
+  revalidatePath("/");
+  return null;
+}
+
+export async function toggleCommentLikeAction(commentId: string) {
+  const user = await requireUser();
+
+  const existing = await prisma.commentLike.findUnique({
+    where: { userId_commentId: { userId: user.id, commentId } },
+  });
+
+  if (existing) {
+    await prisma.commentLike.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.commentLike.create({ data: { userId: user.id, commentId } });
+  }
+
+  const count = await prisma.commentLike.count({ where: { commentId } });
+  return { liked: !existing, count };
+}
+
+/** Yorum silme: yorum sahibi, video sahibi veya yönetici ekibi silebilir. */
+export async function deleteCommentAction(commentId: string) {
+  const user = await requireUser();
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    include: { post: { select: { authorId: true } } },
+  });
+  if (!comment) return;
+
+  const canDelete =
+    comment.authorId === user.id ||
+    comment.post.authorId === user.id ||
+    isStaff(user.role);
+  if (!canDelete) return;
+
+  await prisma.comment.delete({ where: { id: commentId } });
+  await createLog({
+    action: "COMMENT_DELETE",
+    actorId: user.id,
+    detail: `@${user.username} bir yorumu sildi`,
+  });
+  revalidatePath("/");
+}
