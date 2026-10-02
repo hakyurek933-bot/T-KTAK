@@ -33,6 +33,7 @@ export const LOG_ACTION_LABELS: Record<LogAction, string> = {
   POST_DELETE: "Video sildi",
   COMMENT_CREATE: "Yorum yaptı",
   COMMENT_DELETE: "Yorum sildi",
+  EMAIL_VERIFY: "E-postayı doğruladı",
   MESSAGE_SEND: "Mesaj gönderdi",
   BAN: "Banladı",
   UNBAN: "Banı kaldırdı",

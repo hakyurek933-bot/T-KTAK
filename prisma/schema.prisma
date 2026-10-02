@@ -25,6 +25,7 @@ enum LogAction {
   POST_DELETE
   COMMENT_CREATE
   COMMENT_DELETE
+  EMAIL_VERIFY
   MESSAGE_SEND
   BAN
   UNBAN
@@ -43,6 +44,9 @@ model User {
   id           String   @id @default(cuid())
   username     String   @unique
   displayName  String
+  email        String?  @unique
+  emailVerified Boolean @default(false)
+  googleId     String?  @unique
   passwordHash String
   role         Role     @default(USER)
   bio          String?
@@ -199,4 +203,15 @@ model Log {
   target User? @relation("TargetLogs", fields: [targetId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+// E-posta doğrulama kodları (6 haneli, 15 dakika geçerli).
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }

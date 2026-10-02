@@ -38,6 +38,16 @@ export function SignupForm() {
         </div>
       </label>
       <label className="flex flex-col gap-1.5 text-sm">
+        <span className="text-muted">E-posta</span>
+        <input
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="ornek@eposta.com"
+          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
+        />
+      </label>
+      <label className="flex flex-col gap-1.5 text-sm">
         <span className="text-muted">Şifre</span>
         <input
           name="password"

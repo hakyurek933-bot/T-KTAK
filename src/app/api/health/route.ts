@@ -12,6 +12,8 @@ export async function GET() {
     database: hasDatabaseUrl(),
     authSecret: Boolean(process.env.AUTH_SECRET),
     blobToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+    google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    email: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
   };
 
   try {

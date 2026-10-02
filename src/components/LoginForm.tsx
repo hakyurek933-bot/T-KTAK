@@ -18,11 +18,11 @@ export function LoginForm() {
         </p>
       )}
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Kullanıcı adı</span>
+        <span className="text-muted">Kullanıcı adı veya e-posta</span>
         <input
-          name="username"
+          name="identifier"
           autoComplete="username"
-          placeholder="kurucu"
+          placeholder="kurucu veya ornek@eposta.com"
           className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
         />
       </label>
@@ -42,6 +42,35 @@ export function LoginForm() {
       >
         {pending ? "Giriş yapılıyor..." : "Giriş yap"}
       </button>
+      <div className="flex items-center gap-3 text-xs text-muted">
+        <span className="h-px flex-1 bg-white/10" />
+        veya
+        <span className="h-px flex-1 bg-white/10" />
+      </div>
+      <a
+        href="/api/auth/google"
+        className="flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white py-2.5 font-semibold text-neutral-900 transition hover:bg-neutral-100"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path
+            fill="#4285F4"
+            d="M23.5 12.3c0-.9-.1-1.5-.3-2.3H12v4.5h6.5c0 1.1-.7 2.7-2.3 3.8l-.1.3 3.3 2.6.2.1c2-1.9 4-4.6 3.9-9z"
+          />
+          <path
+            fill="#34A853"
+            d="M12 24c3.2 0 6-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.2 0-5.9-2.1-6.8-5l-.3.1-3.1 2.4-.1.3C3.6 21.3 7.5 24 12 24z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M5.2 14.4c-.2-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4l-.1-.3L2 6.9l-.2.1C.7 9 0 10.4 0 12s.7 3 1.9 5l3.3-2.6z"
+          />
+          <path
+            fill="#EA4335"
+            d="M12 4.6c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.5 0 3.6 2.7 1.8 6.9l3.4 2.7c.9-2.9 3.6-5 6.8-5z"
+          />
+        </svg>
+        Google ile giriş yap
+      </a>
       <p className="text-center text-sm text-muted">
         Hesabın yok mu?{" "}
         <Link href="/signup" className="font-medium text-brand-2 hover:underline">

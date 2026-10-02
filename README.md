@@ -25,6 +25,8 @@ Yerli TikTok — kısa video paylaşımı + mesajlaşma platformu. **Kurucu tag'
 | ⚙️ Ayarlar | Profil düzenleme (ad, bio, fotoğraf) + şifre değiştirme |
 | 📤 Yükleme | Cihazdan (Vercel Blob) veya link ile |
 | ✉️ Mesajlaşma | Bire bir DM, canlı yenileme |
+| 📧 E-posta ile kayıt | E-posta zorunlu, 6 haneli doğrulama kodu (Resend kuruluysa) |
+| 🔵 Google ile giriş | Tek tıkla kayıt/giriş, mevcut hesapla otomatik eşleşme |
 | ★ Kurucu tag | Altın renkli "KURUCU" rozeti; **tek kurucu sensin** |
 | 🚫 Ban paneli | Banla / banı kaldır, sebep gir; yetki hiyerarşisi |
 | 📜 Log paneli | Kayıt, giriş, video, yorum, mesaj, ban, rol değişimi |
@@ -99,6 +101,10 @@ npm run dev
 | `FOUNDER_DISPLAY_NAME` | ➖ | Kurucunun görünen adı |
 | `SEED_DEMO` | ➖ | `true` ise örnek üye/video eklenir |
 | `BLOB_READ_WRITE_TOKEN` | ➖ | Vercel Blob; yoksa "link ile ekle" çalışır |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ➖ | Google ile giriş (yoksa buton hata verir) |
+| `NEXT_PUBLIC_APP_URL` | ➖ | Sitenin tam adresi, örn. `https://taktik.vercel.app` (Google callback için) |
+| `RESEND_API_KEY` / `EMAIL_FROM` | ➖ | E-posta doğrulama; yoksa doğrulama otomatik geçilir |
+| `FOUNDER_EMAIL` | ➖ | Kurucunun e-postası (seed ile işlenir) |
 
 ## Komutlar
 

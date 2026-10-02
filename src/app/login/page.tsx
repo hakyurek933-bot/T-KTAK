@@ -4,19 +4,25 @@ import { LoginForm } from "@/components/LoginForm";
 
 export const metadata = { title: "Giriş — Taktik" };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: PageProps<"/login">) {
   const user = await getCurrentUser();
   if (user) redirect("/");
+
+  const sp = await searchParams;
+  const oauthError = typeof sp.error === "string" ? sp.error : null;
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
       <h1 className="mb-1 text-2xl font-bold">Tekrar hoş geldin</h1>
       <p className="mb-8 text-sm text-muted">Taktik hesabınla giriş yap.</p>
+      {oauthError && (
+        <p className="mb-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/30">
+          {oauthError}
+        </p>
+      )}
       <LoginForm />
-      <div className="mt-8 rounded-xl border border-white/10 bg-panel-2/50 p-3 text-xs text-muted">
-        Demo kurucu hesabı: <span className="text-white">kurucu</span> / şifre:{" "}
-        <span className="text-white">kurucu1234</span>
-      </div>
     </div>
   );
 }

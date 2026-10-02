@@ -69,6 +69,38 @@ export default async function AdminPage() {
         Kurucu ve moderatörler için ban yönetimi ve denetim kayıtları.
       </p>
 
+      <details className="mb-6 rounded-2xl border border-white/10 bg-panel p-4 text-sm">
+        <summary className="cursor-pointer font-semibold">
+          Banlama nasıl kullanılır?
+        </summary>
+        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-muted">
+          <li>
+            <span className="text-white">Sebep</span> kutusuna kısa bir gerekçe yazın
+            (ör. “spam”, “hakaret”). Bu sebep banlı kullanıcıya giriş ekranında
+            gösterilir ve log kaydına işlenir.
+          </li>
+          <li>
+            <span className="text-white">Banla</span> butonuna basın. Banlanan kullanıcı
+            anında çıkışa düşer, giriş yapamaz, videosu akışta durur ama hesabı
+            kilitlenir.
+          </li>
+          <li>
+            Yanlışlıkla banladıysanız aynı satırdaki{" "}
+            <span className="text-white">Banı kaldır</span> butonuyla geri açın.
+          </li>
+          <li>
+            <span className="text-white">Rol</span> sütunundan Üye / Moderatör / Kurucu
+            seçebilirsiniz. Rol değiştirme yalnızca kurucuya açıktır;
+            moderatörler yönetici ekibini banlayamaz.
+          </li>
+          <li>
+            Her işlem (ban, ban kaldırma, rol değişimi) aşağıdaki{" "}
+            <span className="text-white">Denetim Kayıtları</span> bölümüne kim, kimi,
+            ne zaman olarak düşer.
+          </li>
+        </ol>
+      </details>
+
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Üye", value: userCount },
