@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  deleteLiveMessageAction,
   endLiveAction,
   getLiveSnapshot,
   sendLiveMessageAction,
@@ -21,12 +22,16 @@ export function LiveChat({
   roomId,
   isAuthor,
   canModerate,
+  currentUsername,
+  canDelete,
   initial,
   compact = false,
 }: {
   roomId: string;
   isAuthor: boolean;
   canModerate: boolean;
+  currentUsername: string;
+  canDelete: boolean;
   initial: LiveSnapshot;
   compact?: boolean;
 }) {
@@ -84,6 +89,16 @@ export function LiveChat({
     }
   }
 
+  async function handleDeleteMessage(id: string) {
+    const res = await deleteLiveMessageAction(id);
+    if (!res.error) {
+      setSnapshot((s) => ({
+        ...s,
+        messages: s.messages.filter((m) => m.id !== id),
+      }));
+    }
+  }
+
   const live = snapshot.status === "LIVE";
   const giftById = new Map(snapshot.gifts.map((g) => [g.id, g]));
 
@@ -106,7 +121,7 @@ export function LiveChat({
     return (
       <div
         key={`gift-${g.id}`}
-        className="rounded-xl border border-amber-400/30 bg-gradient-to-r from-amber-400/15 to-pink-500/15 px-3 py-2 text-sm"
+        className="animate-gift-pop rounded-xl border border-amber-400/30 bg-gradient-to-r from-amber-400/15 to-pink-500/15 px-3 py-2 text-sm"
       >
         <span className="text-lg">{catalog?.emoji ?? "🎁"}</span>{" "}
         <span className="font-semibold">@{g.sender.username}</span>{" "}
@@ -124,6 +139,14 @@ export function LiveChat({
         compact ? "h-full border-0 bg-transparent" : "h-[60vh] rounded-2xl border border-white/10 md:h-[70vh]"
       }`}
     >
+      <style jsx>{`
+        @keyframes gift-pop {
+          0% { opacity: 0; transform: scale(0.7); }
+          60% { opacity: 1; transform: scale(1.05); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        .animate-gift-pop { animation: gift-pop 0.45s ease-out; }
+      `}</style>
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
         <span className="text-sm font-semibold">
           {live ? (
@@ -162,17 +185,28 @@ export function LiveChat({
           if (!m) return null;
           if (m.body === LIVE_JOIN_TEXT) {
             return (
-              <div key={m.id} className="py-0.5 text-center text-xs text-muted">
+              <div key={m.id} className="py-0.5 text-center text-xs text-white/70 drop-shadow">
                 👋 <span className="font-semibold">@{m.author.username}</span>{" "}
                 katıldı
               </div>
             );
           }
+          const mine = m.author.username === currentUsername;
           return (
-            <div key={m.id} className="text-sm">
-              <span className="font-semibold">@{m.author.username}</span>{" "}
+            <div key={m.id} className="group text-sm drop-shadow">
+              <span className="font-semibold text-white">@{m.author.username}</span>{" "}
               <RoleTag role={m.author.role as Role} />{" "}
-              <span className="break-words text-foreground/90">{m.body}</span>
+              <span className="break-words text-white/90">{m.body}</span>{" "}
+              {(canDelete || mine) && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMessage(m.id)}
+                  title="Mesajı sil"
+                  className="ml-1 text-xs text-white/40 opacity-0 hover:text-red-400 group-hover:opacity-100"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           );
         })}

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isStaff } from "@/lib/auth";
 import { isSameDay } from "@/lib/coins";
 import { Avatar } from "@/components/Avatar";
-import { LiveRoomView } from "@/components/LiveRoomView";
+import { LiveRoomView, type EndedSummary } from "@/components/LiveRoomView";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,15 @@ export async function generateMetadata() {
 
 function recentCutoff() {
   return new Date(Date.now() - 45_000);
+}
+
+function formatDuration(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  if (hh > 0) return `${hh} sa ${mm} dk`;
+  if (mm > 0) return `${mm} dk`;
+  return `${s} sn`;
 }
 
 export default async function LiveRoomPage({
@@ -28,6 +37,9 @@ export default async function LiveRoomPage({
     title: string;
     videoUrl: string;
     status: "LIVE" | "ENDED";
+    likeCount: number;
+    startedAt: Date;
+    endedAt: Date | null;
     author: {
       id: string;
       username: string;
@@ -45,6 +57,9 @@ export default async function LiveRoomPage({
         title: true,
         videoUrl: true,
         status: true,
+        likeCount: true,
+        startedAt: true,
+        endedAt: true,
         author: {
           select: {
             id: true,
@@ -80,7 +95,7 @@ export default async function LiveRoomPage({
     /* coin sistemi hazır değilse 0 görünür */
   }
 
-  // Şu an izleyenler (son 90 saniyede nabız verenler).
+  // Şu an izleyenler (son 45 saniyede nabız verenler).
   let watchers: {
     username: string;
     displayName: string;
@@ -104,8 +119,33 @@ export default async function LiveRoomPage({
     }
   }
 
+  // Biten yayın özeti: süre + mesaj + beğeni + hediye.
+  let endedSummary: EndedSummary | null = null;
+  if (room.status === "ENDED") {
+    try {
+      const [msgCount, giftAgg] = await Promise.all([
+        prisma.liveMessage.count({ where: { roomId: room.id } }),
+        prisma.liveGift.aggregate({
+          where: { roomId: room.id },
+          _sum: { cost: true },
+          _count: true,
+        }),
+      ]);
+      const end = room.endedAt ?? new Date();
+      endedSummary = {
+        duration: formatDuration(end.getTime() - room.startedAt.getTime()),
+        messages: msgCount,
+        likes: initial?.likes ?? room.likeCount,
+        giftCoins: giftAgg._sum.cost ?? 0,
+        giftCount: giftAgg._count,
+      };
+    } catch {
+      endedSummary = null;
+    }
+  }
+
   return (
-    <div className="mx-auto w-full max-w-2xl px-3 py-4">
+    <div className="mx-auto w-full max-w-4xl px-3 py-4">
       <Link
         href="/live"
         className="mb-3 inline-block text-sm text-muted hover:text-white"
@@ -124,6 +164,9 @@ export default async function LiveRoomPage({
         claimedToday={claimedToday}
         isAuthor={room.author.id === me.id}
         canModerate={isStaff(me.role)}
+        currentUsername={me.username}
+        startedAtISO={room.startedAt.toISOString()}
+        endedSummary={endedSummary}
       />
 
       {room.status === "LIVE" && watchers.length > 0 && (

@@ -186,6 +186,40 @@ export async function sendLiveMessageAction(input: {
   return { ok: true };
 }
 
+/** Canlı mesaj silme: yazarı, yayıncı veya ekip silebilir. */
+export async function deleteLiveMessageAction(
+  messageId: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const user = await requireUser();
+
+  let msg: {
+    authorId: string;
+    room: { authorId: string };
+  } | null = null;
+  try {
+    msg = await prisma.liveMessage.findUnique({
+      where: { id: messageId },
+      select: { authorId: true, room: { select: { authorId: true } } },
+    });
+  } catch {
+    return { error: "Mesaj bulunamadı" };
+  }
+  if (!msg) return { error: "Mesaj bulunamadı" };
+
+  const allowed =
+    msg.authorId === user.id ||
+    msg.room.authorId === user.id ||
+    isStaff(user.role);
+  if (!allowed) return { error: "Yetkin yok" };
+
+  try {
+    await prisma.liveMessage.delete({ where: { id: messageId } });
+  } catch {
+    return { error: "Silinemedi" };
+  }
+  return { ok: true };
+}
+
 export type LiveGiftView = {
   id: string;
   gift: string;
