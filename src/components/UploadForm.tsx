@@ -13,15 +13,64 @@ export function UploadForm() {
   const [tab, setTab] = useState<"file" | "link">("file");
   const [videoUrl, setVideoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  /** Dosya gerçekten bu tarayıcıda oynatılabiliyor mu? (codec/format tuzağı) */
+  function probePlayable(file: File): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        const test = document.createElement("video");
+        if (file.type && test.canPlayType(file.type) === "") {
+          resolve(false);
+          return;
+        }
+      } catch {
+        /* ön kontrol başarısızsa gerçek yükleme testine devam et */
+      }
+      const url = URL.createObjectURL(file);
+      const v = document.createElement("video");
+      v.preload = "auto";
+      v.muted = true;
+      const timer = setTimeout(() => finish(false), 10000);
+      function finish(ok: boolean) {
+        clearTimeout(timer);
+        v.removeAttribute("src");
+        v.load();
+        URL.revokeObjectURL(url);
+        resolve(ok);
+      }
+      v.addEventListener("error", () => finish(false), { once: true });
+      v.addEventListener("canplay", () => finish(true), { once: true });
+      v.src = url;
+    });
+  }
+
+  const MAX_BYTES = 50 * 1024 * 1024;
+
   async function handleFile(file: File) {
     setUploadError(null);
+    if (file.size > MAX_BYTES) {
+      setUploadError(
+        `Video çok büyük (${(file.size / 1024 / 1024).toFixed(1)} MB). En fazla 50 MB yükleyebilirsin — daha kısa bir video dene.`
+      );
+      return;
+    }
     setUploading(true);
+    setChecking(true);
     setProgress(0);
     try {
+      const playable = await probePlayable(file);
+      setChecking(false);
+      if (!playable) {
+        setUploadError(
+          "Bu video bu tarayıcıda oynatılamıyor (örn. iPhone 'Verimli' modunda çekilmiş olabilir). iPhone'da Ayarlar → Kamera → Formatlar → 'En Uyumlu'yu seçip tekrar çek, ya da videoyu MP4 (H.264) olarak kaydet."
+        );
+        setUploading(false);
+        return;
+      }
       const pathname = createBlobPathname(file);
       const blob = await upload(pathname, file, {
         access: "public",
@@ -112,13 +161,19 @@ export function UploadForm() {
             </div>
           ) : uploading ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full bg-brand transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-sm text-muted">Yükleniyor... %{progress}</p>
+              {checking ? (
+                <p className="text-sm text-muted">Video kontrol ediliyor...</p>
+              ) : (
+                <>
+                  <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full bg-brand transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted">Yükleniyor... %{progress}</p>
+                </>
+              )}
             </div>
           ) : (
             <>

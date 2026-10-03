@@ -30,6 +30,7 @@ export function VideoPlayer({
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [progress, setProgress] = useState(0);
   const [burst, setBurst] = useState(0);
 
@@ -58,7 +59,7 @@ export function VideoPlayer({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [retryKey]);
 
   function togglePlay() {
     const el = ref.current;
@@ -84,7 +85,19 @@ export function VideoPlayer({
         <div>
           <p className="text-3xl">🚫</p>
           <p className="mt-2">Video oynatılamadı</p>
-          <p className="mt-1 text-xs">Bağlantı geçersiz olabilir.</p>
+          <p className="mt-1 text-xs">
+            Dosya bu tarayıcıda desteklenmiyor ya da bağlantı geçersiz olabilir.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setFailed(false);
+              setRetryKey((k) => k + 1);
+            }}
+            className="mt-3 rounded-full border border-white/20 px-5 py-1.5 text-xs font-semibold text-white hover:border-white/50"
+          >
+            Tekrar dene
+          </button>
         </div>
       </div>
     );
@@ -93,6 +106,7 @@ export function VideoPlayer({
   return (
     <div className="relative h-full w-full bg-black">
       <video
+        key={retryKey}
         ref={ref}
         src={src}
         poster={poster}
