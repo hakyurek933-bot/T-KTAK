@@ -39,6 +39,8 @@ export const LOG_ACTION_LABELS: Record<LogAction, string> = {
   GIFT_SEND: "Hediye gönderdi",
   COIN_ADJUST: "Coin düzenledi",
   DAILY_BONUS: "Günlük bonus aldı",
+  STORY_CREATE: "Hikaye paylaştı",
+  STORY_DELETE: "Hikaye sildi",
   MESSAGE_SEND: "Mesaj gönderdi",
   BAN: "Banladı",
   UNBAN: "Banı kaldırdı",

@@ -31,6 +31,8 @@ enum LogAction {
   GIFT_SEND
   COIN_ADJUST
   DAILY_BONUS
+  STORY_CREATE
+  STORY_DELETE
   MESSAGE_SEND
   BAN
   UNBAN
@@ -106,6 +108,10 @@ model User {
   // Coin hareketleri ve gönderilen hediyeler
   coinTransactions CoinTransaction[]
   sentGifts        LiveGift[]        @relation("GiftSender")
+
+  // Hikayeler
+  stories     Story[]     @relation("StoryAuthor")
+  storyViews  StoryView[] @relation("StoryViewer")
 }
 
 model Post {
@@ -282,6 +288,36 @@ model LiveViewer {
 
   @@unique([roomId, userId])
   @@index([roomId, lastSeen])
+}
+
+// Hikayeler: 24 saat geçerli fotoğraf/video. Süresi dolanlar listelenmez.
+model Story {
+  id        String   @id @default(cuid())
+  authorId  String
+  mediaUrl  String
+  mediaType String   @default("video")
+  caption   String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  author User        @relation("StoryAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  views  StoryView[]
+
+  @@index([expiresAt])
+  @@index([authorId, createdAt])
+}
+
+model StoryView {
+  id        String   @id @default(cuid())
+  storyId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user  User  @relation("StoryViewer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@index([storyId])
 }
 
 // E-posta doğrulama kodları (6 haneli, 15 dakika geçerli).

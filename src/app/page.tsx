@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isStaff } from "@/lib/auth";
 import { Feed } from "@/components/Feed";
 import { FeedTabs } from "@/components/FeedTabs";
+import { StoryStrip } from "@/components/StoryStrip";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +122,7 @@ export default async function HomePage({
           </div>
         </div>
       )}
+      {user && <StoryStrip />}
 
       <Feed
         posts={posts}

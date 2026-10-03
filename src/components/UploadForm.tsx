@@ -15,12 +15,14 @@ export function UploadForm() {
   const [videoUrl, setVideoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [fileInfo, setFileInfo] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
     setUploadError(null);
+    setFileInfo(`${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`);
     if (file.size > MAX_VIDEO_BYTES) {
       setUploadError(
         `Video çok büyük (${(file.size / 1024 / 1024).toFixed(1)} MB). En fazla 50 MB yükleyebilirsin — daha kısa bir video dene.`
@@ -130,6 +132,9 @@ export function UploadForm() {
             </div>
           ) : uploading ? (
             <div className="flex flex-col items-center gap-3">
+              {fileInfo && (
+                <p className="max-w-xs truncate text-xs text-muted">{fileInfo}</p>
+              )}
               {checking ? (
                 <p className="text-sm text-muted">Video kontrol ediliyor...</p>
               ) : (

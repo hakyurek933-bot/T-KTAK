@@ -39,6 +39,33 @@ export default async function DiscoverPage() {
 
   const [postCount, userCount, likeCount] = tags;
 
+  // Son 7 günün trend etiketleri (açıklamalardan sayılır).
+  let trends: { tag: string; count: number }[] = [];
+  try {
+    const recent = await prisma.post.findMany({
+      where: {
+        createdAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        caption: { not: null },
+      },
+      take: 200,
+      select: { caption: true },
+    });
+    const counts = new Map<string, number>();
+    for (const p of recent) {
+      const found = (p.caption ?? "").match(/#([\p{L}\p{N}_]+)/gu) ?? [];
+      for (const t of found) {
+        const key = t.slice(1).toLowerCase();
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    trends = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([tag, count]) => ({ tag, count }));
+  } catch {
+    trends = [];
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl px-3 py-5">
       <h1 className="mb-4 text-xl font-extrabold">Keşfet</h1>
@@ -59,6 +86,27 @@ export default async function DiscoverPage() {
           </div>
         ))}
       </div>
+
+      {/* Trend etiketler */}
+      {trends.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+            🔥 Trend etiketler
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {trends.map((t) => (
+              <Link
+                key={t.tag}
+                href={`/tag/${t.tag}`}
+                className="rounded-full border border-white/10 bg-panel px-3 py-1.5 text-sm hover:border-brand"
+              >
+                <span className="font-semibold text-brand-2">#{t.tag}</span>{" "}
+                <span className="text-xs text-muted">{t.count}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Öne çıkan içerik sahipleri */}
       {creators.length > 0 && (

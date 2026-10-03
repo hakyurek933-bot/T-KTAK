@@ -9,6 +9,7 @@ import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { PlayIcon, HeartIcon, GridIcon, LockIcon } from "@/components/icons";
 import { VideoThumb } from "@/components/VideoThumb";
 import { DailyBonusButton } from "@/components/DailyBonusButton";
+import { ProfileLevel } from "@/components/ProfileLevel";
 import { formatCount } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -45,23 +46,35 @@ export default async function ProfilePage({
 
   const isMe = me?.id === user.id;
 
-  // Coin bilgisi ayrı sorgu: kolon henüz yoksa profil yine açılır.
+  // Coin + aktivite bilgisi ayrı sorgular: kolonlar henüz yoksa profil yine açılır.
   let coinBalance = 0;
   let claimedToday = false;
-  if (isMe) {
-    try {
-      const account = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { coinBalance: true, lastDailyBonusAt: true },
-      });
-      coinBalance = account?.coinBalance ?? 0;
-      claimedToday = !!(
+  let likesReceived = 0;
+  let liveCount = 0;
+  let giftsSent = 0;
+  try {
+    const account = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { coinBalance: true, lastDailyBonusAt: true },
+    });
+    coinBalance = account?.coinBalance ?? 0;
+    claimedToday =
+      isMe &&
+      !!(
         account?.lastDailyBonusAt &&
         account.lastDailyBonusAt.toDateString() === new Date().toDateString()
       );
-    } catch {
-      /* coin sistemi hazır değilse 0 görünür */
-    }
+  } catch {
+    /* coin sistemi hazır değilse 0 görünür */
+  }
+  try {
+    [likesReceived, liveCount, giftsSent] = await Promise.all([
+      prisma.like.count({ where: { post: { authorId: user.id } } }),
+      prisma.liveRoom.count({ where: { authorId: user.id } }),
+      prisma.liveGift.count({ where: { senderId: user.id } }),
+    ]);
+  } catch {
+    /* canlı/coin tabloları hazır değilse rozetler kısmi görünür */
   }
 
   const [isFollowing, posts, likedPosts] = await Promise.all([
@@ -127,6 +140,16 @@ export default async function ProfilePage({
           <Stat label="Takipçi" value={user._count.followers} href={`/u/${user.username}/followers`} />
           <Stat label="Beğeni" value={likedPosts.length} />
         </div>
+
+        <ProfileLevel
+          isStaff={isStaff(user.role)}
+          posts={user._count.posts}
+          followers={user._count.followers}
+          likes={likesReceived}
+          lives={liveCount}
+          gifts={giftsSent}
+          balance={coinBalance}
+        />
 
         {isMe && (
           <DailyBonusButton claimedToday={claimedToday} balance={coinBalance} />
