@@ -31,7 +31,9 @@ export function BottomNav({ username }: { username?: string }) {
         aria-label="Yükle"
         className="relative -mt-1 grid h-9 w-12 place-items-center"
       >
-        <span className="grid h-8 w-12 place-items-center rounded-lg bg-white text-ink">
+        <span className="absolute inset-x-1 top-0.5 h-8 rounded-lg bg-brand-2/90" />
+        <span className="absolute inset-x-1 bottom-0.5 h-8 rounded-lg bg-brand/90" />
+        <span className="relative grid h-8 w-12 place-items-center rounded-lg bg-white text-ink transition active:scale-95">
           <PlusIcon size={24} />
         </span>
       </Link>
@@ -69,10 +71,13 @@ function NavButton({
   return (
     <Link
       href={href}
-      className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${
+      className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${
         active ? "text-white" : "text-muted"
       }`}
     >
+      {active && (
+        <span className="absolute top-0.5 h-1 w-6 rounded-full bg-gradient-to-r from-brand to-brand-2" />
+      )}
       {children}
       <span>{label}</span>
     </Link>

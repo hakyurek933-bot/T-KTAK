@@ -23,6 +23,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+::selection {
+  background: #fe2c55;
+  color: #fff;
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -31,8 +36,16 @@ body {
   background: #2a2a3d;
   border-radius: 999px;
 }
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a52;
+}
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* İnce kaydırma şeritleri (yatay hikaye/raf şeritleri için) */
+.scroll-thin::-webkit-scrollbar {
+  height: 6px;
 }
 
 @keyframes pop {
@@ -48,4 +61,32 @@ body {
 }
 .animate-pop {
   animation: pop 0.3s ease;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.35s ease both;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #1c1c2b 25%, #2a2a3d 50%, #1c1c2b 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
 }

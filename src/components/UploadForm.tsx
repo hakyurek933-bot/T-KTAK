@@ -19,6 +19,7 @@ export function UploadForm({
   const [videoUrl, setVideoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [fileInfo, setFileInfo] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -124,7 +125,22 @@ export function UploadForm({
       </div>
 
       {tab === "file" ? (
-        <div className="rounded-2xl border border-dashed border-white/15 p-6 text-center">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f && !uploading) handleFile(f);
+          }}
+          className={`rounded-2xl border border-dashed p-6 text-center transition ${
+            dragOver ? "border-brand bg-brand/10" : "border-white/15"
+          }`}
+        >
           <input
             ref={fileRef}
             type="file"
@@ -170,9 +186,13 @@ export function UploadForm({
             </div>
           ) : (
             <>
-              <p className="text-sm text-muted">
-                Video dosyanı seç (mp4 / 3gp / webm, en fazla 50 MB)
+              <p className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-2xl">
+                🎬
               </p>
+              <p className="mt-2 text-sm text-muted">
+                Video dosyanı seç veya buraya sürükle
+              </p>
+              <p className="text-xs text-muted">(mp4 / 3gp / webm, en fazla 50 MB)</p>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
