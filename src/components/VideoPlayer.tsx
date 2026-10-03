@@ -3,11 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { PlayIcon } from "@/components/icons";
 
+// Oturum boyu hatırlanan ses tercihi (bir videoda açınca hepsinde açık kalır).
+let sessionMuted = true;
+let hintShown = false;
+
 /**
  * Tam ekran TikTok tarzı video oynatıcı.
  * - Görünür olduğunda otomatik oynar
  * - Dokununca duraklat/oynat
- * - Sessiz başlar, sağ üstteki butonla ses açılır
+ * - Sessiz başlar; ilk videoda "sesi aç" işareti çıkar, seçim oturum boyu hatırlanır
  */
 export function VideoPlayer({
   src,
@@ -27,12 +31,26 @@ export function VideoPlayer({
   useEffect(() => {
     visibleRef.current = onFirstVisible;
   }, [onFirstVisible]);
-  const [muted, setMuted] = useState(true);
+  useEffect(() => {
+    if (ref.current) ref.current.muted = sessionMuted;
+  }, [retryKey]);
+  const [muted, setMuted] = useState(sessionMuted);
+  const [showHint, setShowHint] = useState(!hintShown);
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [progress, setProgress] = useState(0);
   const [burst, setBurst] = useState(0);
+
+  function toggleMute() {
+    setMuted((m) => {
+      sessionMuted = !m;
+      return !m;
+    });
+    hintShown = true;
+    setShowHint(false);
+    if (ref.current) ref.current.muted = !ref.current.muted;
+  }
 
   useEffect(() => {
     const el = ref.current;
@@ -151,15 +169,23 @@ export function VideoPlayer({
 
       <button
         type="button"
-        onClick={() => {
-          setMuted((m) => !m);
-          if (ref.current) ref.current.muted = !muted;
-        }}
-        className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/50 text-sm text-white backdrop-blur hover:bg-black/70"
+        onClick={toggleMute}
+        className="absolute right-3 top-3 z-20 grid h-11 w-11 place-items-center rounded-full bg-black/50 text-lg text-white backdrop-blur hover:bg-black/70 active:scale-90"
         aria-label={muted ? "Sesi aç" : "Sesi kapat"}
       >
         {muted ? "🔇" : "🔊"}
       </button>
+
+      {/* İlk videoda ses işareti (telefonda sesin kapalı kaldığı fark edilsin) */}
+      {showHint && muted && !failed && (
+        <button
+          type="button"
+          onClick={toggleMute}
+          className="absolute bottom-32 left-1/2 z-20 -translate-x-1/2 animate-pulse rounded-full bg-white/95 px-5 py-2.5 text-sm font-bold text-black shadow-lg active:scale-95"
+        >
+          🔊 Sesi açmak için dokun
+        </button>
+      )}
 
       {/* İlerleme çubuğu */}
       <div className="absolute inset-x-0 bottom-0 z-20 h-0.5 bg-white/20">

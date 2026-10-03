@@ -45,8 +45,8 @@ export default async function DiscoverPage() {
 
   // Öne çıkarılanlar üstte, sonra yeniler (JS sıralaması: şema geriliğinde güvenli).
   const ordered = [...posts].sort((a, b) => {
-    const pa = a.promotedUntil && new Date(a.promotedUntil).getTime() > Date.now() ? 1 : 0;
-    const pb = b.promotedUntil && new Date(b.promotedUntil).getTime() > Date.now() ? 1 : 0;
+    const pa = isActivePromo(a.promotedUntil) ? 1 : 0;
+    const pb = isActivePromo(b.promotedUntil) ? 1 : 0;
     if (pa !== pb) return pb - pa;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
