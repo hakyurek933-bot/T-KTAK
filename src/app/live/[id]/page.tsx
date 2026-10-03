@@ -18,6 +18,10 @@ export async function generateMetadata() {
   return { title: `Canlı yayın — Taktik` };
 }
 
+function recentCutoff() {
+  return new Date(Date.now() - 90_000);
+}
+
 export default async function LiveRoomPage({
   params,
 }: PageProps<"/live/[id]">) {
@@ -82,6 +86,24 @@ export default async function LiveRoomPage({
     /* coin sistemi hazır değilse 0 görünür */
   }
 
+  // Şu an izleyenler (son 90 saniyede nabız verenler).
+  let watchers: { username: string; displayName: string; avatarUrl: string | null }[] = [];
+  if (room.status === "LIVE") {
+    try {
+      const rows = await prisma.liveViewer.findMany({
+        where: { roomId: room.id, lastSeen: { gt: recentCutoff() } },
+        orderBy: { lastSeen: "desc" },
+        take: 12,
+        select: {
+          user: { select: { username: true, displayName: true, avatarUrl: true } },
+        },
+      });
+      watchers = rows.map((r) => r.user);
+    } catch {
+      watchers = [];
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-3 py-4">
       <Link
@@ -113,6 +135,35 @@ export default async function LiveRoomPage({
           <LiveLikeButton roomId={room.id} initialLikes={initial.likes} />
         )}
       </div>
+
+      {room.status === "LIVE" && watchers.length > 0 && (
+        <div className="mb-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-panel px-3 py-2">
+          <div className="flex -space-x-2">
+            {watchers.slice(0, 8).map((w) => (
+              <span
+                key={w.username}
+                title={`@${w.username}`}
+                className="rounded-full ring-2 ring-panel"
+              >
+                <Avatar
+                  user={{
+                    username: w.username,
+                    displayName: w.displayName,
+                    avatarUrl: w.avatarUrl,
+                  }}
+                  size={26}
+                />
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-muted">
+            <span className="font-semibold text-white">
+              {watchers.length}
+            </span>{" "}
+            kişi izliyor
+          </p>
+        </div>
+      )}
 
       <div className="aspect-[9/16] w-full overflow-hidden rounded-2xl bg-black sm:max-h-[60vh]">
         <VideoPlayer src={room.videoUrl} />

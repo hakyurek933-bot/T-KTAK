@@ -2,6 +2,9 @@ export function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+/** Canlı yayına katılma sistem mesajı (sohbette ortalanmış gösterilir). */
+export const LIVE_JOIN_TEXT = "yayına katıldı 👋";
+
 /** "3 dk önce" tarzı Türkçe göreli zaman. */
 export function timeAgo(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;

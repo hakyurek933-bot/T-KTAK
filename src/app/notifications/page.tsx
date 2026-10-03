@@ -16,6 +16,7 @@ const TEXT: Record<string, string> = {
   REPLY: "yorumuna yanıt verdi",
   FOLLOW: "seni takip etmeye başladı",
   MENTION: "senden bahsetti",
+  LIVE: "canlı yayın başlattı 🔴",
 };
 
 export default async function NotificationsPage() {
@@ -58,9 +59,11 @@ export default async function NotificationsPage() {
                 href={
                   n.type === "FOLLOW"
                     ? `/u/${n.actor.username}`
-                    : n.postId
-                      ? `/?v=${n.postId}`
-                      : "/"
+                    : n.type === "LIVE"
+                      ? "/live"
+                      : n.postId
+                        ? `/?v=${n.postId}`
+                        : "/"
                 }
                 className={`flex items-center gap-3 px-4 py-3 hover:bg-white/5 ${
                   n.read ? "" : "bg-brand/5"
@@ -73,6 +76,8 @@ export default async function NotificationsPage() {
                       <HeartIcon size={14} filled />
                     ) : n.type === "FOLLOW" ? (
                       <PlusIcon size={14} className="text-brand" />
+                    ) : n.type === "LIVE" ? (
+                      <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
                     ) : (
                       <CommentIcon size={14} className="text-brand-2" />
                     )}

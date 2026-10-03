@@ -57,6 +57,31 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
     }
   }
 
+  async function handleDeleteBad() {
+    const ids = items
+      .filter((p) => status[p.id] === "bad")
+      .map((p) => p.id);
+    if (ids.length === 0) return;
+    if (
+      !confirm(
+        `${ids.length} oynatılamayan video kalıcı olarak silinsin mi?`
+      )
+    )
+      return;
+    for (const id of ids) {
+      setDeleting(id);
+      try {
+        await deletePostAction(id);
+        setItems((list) => list.filter((p) => p.id !== id));
+      } catch {
+        /* tekil hata toplu silmeyi durdurmasın */
+      }
+    }
+    setDeleting(null);
+  }
+
+  const badCount = items.filter((p) => status[p.id] === "bad").length;
+
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-muted">
@@ -72,7 +97,23 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <>
+      {badCount > 0 && (
+        <div className="mb-3 flex items-center justify-between rounded-2xl border border-red-500/25 bg-red-500/5 px-4 py-2.5">
+          <p className="text-xs text-muted">
+            {badCount} video oynatılamıyor
+          </p>
+          <button
+            type="button"
+            onClick={handleDeleteBad}
+            disabled={deleting !== null}
+            className="rounded-full bg-red-600 px-4 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+          >
+            {deleting !== null ? "Siliniyor..." : `🗑 Bozukları toplu sil (${badCount})`}
+          </button>
+        </div>
+      )}
+      <ul className="flex flex-col gap-3">
       {items.map((p) => {
         const st = status[p.id] ?? "check";
         return (
@@ -132,5 +173,6 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
         );
       })}
     </ul>
+    </>
   );
 }

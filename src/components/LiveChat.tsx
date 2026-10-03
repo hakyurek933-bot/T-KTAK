@@ -9,6 +9,7 @@ import {
   type LiveSnapshot,
 } from "@/actions/live";
 import { findGift } from "@/lib/coins";
+import { LIVE_JOIN_TEXT } from "@/lib/utils";
 import { RoleTag } from "@/components/RoleTag";
 import type { Role } from "@prisma/client";
 
@@ -153,6 +154,14 @@ export function LiveChat({
           }
           const m = snapshot.messages.find((x) => x.id === item.id);
           if (!m) return null;
+          if (m.body === LIVE_JOIN_TEXT) {
+            return (
+              <div key={m.id} className="py-0.5 text-center text-xs text-muted">
+                👋 <span className="font-semibold">@{m.author.username}</span>{" "}
+                katıldı
+              </div>
+            );
+          }
           return (
             <div key={m.id} className="text-sm">
               <span className="font-semibold">@{m.author.username}</span>{" "}

@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, isStaff } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { getAge, LIVE_MIN_AGE } from "@/lib/age";
+import { LIVE_JOIN_TEXT } from "@/lib/utils";
 import { rateLimit } from "@/lib/ratelimit";
 
 export type LiveState = { error?: string } | null;
@@ -84,6 +85,26 @@ export async function startLiveAction(
     actorId: user.id,
     detail: `@${user.username} canlı yayın açtı: ${room.title}`,
   });
+
+  // Takipçilere canlı bildirimi (TikTok'taki gibi). Hata yayını engellemez.
+  try {
+    const followers = await prisma.follow.findMany({
+      where: { followingId: user.id },
+      take: 200,
+      select: { followerId: true },
+    });
+    if (followers.length > 0) {
+      await prisma.notification.createMany({
+        data: followers.map((f) => ({
+          userId: f.followerId,
+          actorId: user.id,
+          type: "LIVE" as const,
+        })),
+      });
+    }
+  } catch {
+    /* bildirim gidemezse yayın yine de açılır */
+  }
 
   revalidatePath("/live");
   redirect(`/live/${room.id}`);
@@ -239,8 +260,19 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
   }
   if (!room) return null;
 
-  // Nabız: izleyici listesini taze tut.
+  // Nabız: izleyici listesini taze tut. İlk girişte katılma mesajı bırak.
   try {
+    const seen = await prisma.liveViewer.findUnique({
+      where: { roomId_userId: { roomId, userId: user.id } },
+      select: { id: true },
+    });
+    if (!seen && room.status === "LIVE") {
+      await prisma.liveMessage
+        .create({
+          data: { roomId, authorId: user.id, body: LIVE_JOIN_TEXT },
+        })
+        .catch(() => {});
+    }
     await prisma.liveViewer.upsert({
       where: { roomId_userId: { roomId, userId: user.id } },
       update: { lastSeen: new Date() },

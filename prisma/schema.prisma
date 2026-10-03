@@ -59,6 +59,7 @@ enum NotificationType {
   REPLY
   FOLLOW
   MENTION
+  LIVE
 }
 
 model User {
