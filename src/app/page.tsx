@@ -36,6 +36,12 @@ const postInclude = {
   },
   likes: { select: { userId: true } },
   bookmarks: { select: { userId: true } },
+  duetOf: {
+    select: {
+      videoUrl: true,
+      author: { select: { username: true } },
+    },
+  },
   comments: commentInclude,
 };
 

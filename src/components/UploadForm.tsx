@@ -5,7 +5,11 @@ import { upload } from "@vercel/blob/client";
 import { createPostAction, type PostState } from "@/actions/posts";
 import { MAX_VIDEO_BYTES, probeFilePlayable } from "@/lib/video-probe";
 
-export function UploadForm() {
+export function UploadForm({
+  duetOf = null,
+}: {
+  duetOf?: { id: string; videoUrl: string; author: { username: string } } | null;
+}) {
   const [state, action, pending] = useActionState<PostState, FormData>(
     createPostAction,
     null
@@ -83,6 +87,21 @@ export function UploadForm() {
 
   return (
     <div className="flex flex-col gap-5">
+      {duetOf && (
+        <div className="flex items-center gap-3 rounded-2xl border border-brand/30 bg-brand/10 p-3">
+          <video
+            src={duetOf.videoUrl}
+            muted
+            playsInline
+            preload="metadata"
+            className="aspect-[9/16] w-14 rounded-lg bg-black object-cover"
+          />
+          <p className="text-xs text-muted">
+            🎭 <span className="font-semibold text-white">@{duetOf.author.username}</span>{" "}
+            videosuna düet çekiyorsun. Yayınlandığında yan yana oynar.
+          </p>
+        </div>
+      )}
       <div className="flex rounded-xl border border-white/10 bg-panel-2 p-1 text-sm">
         <button
           type="button"
@@ -184,6 +203,7 @@ export function UploadForm() {
           </p>
         )}
         <input type="hidden" name="videoUrl" value={videoUrl} />
+        {duetOf && <input type="hidden" name="duetOfId" value={duetOf.id} />}
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted">Açıklama (opsiyonel)</span>
           <textarea

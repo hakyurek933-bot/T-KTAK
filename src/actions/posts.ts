@@ -15,6 +15,7 @@ export type PostState = { error?: string; ok?: boolean } | null;
 const postSchema = z.object({
   videoUrl: z.string().url("Geçerli bir video bağlantısı gerekli").max(2000),
   caption: z.string().max(300, "Açıklama en fazla 300 karakter").optional(),
+  duetOfId: z.string().min(1).max(50).optional(),
 });
 
 export async function createPostAction(
@@ -26,6 +27,7 @@ export async function createPostAction(
   const parsed = postSchema.safeParse({
     videoUrl: String(formData.get("videoUrl") || "").trim(),
     caption: String(formData.get("caption") || "").trim() || undefined,
+    duetOfId: String(formData.get("duetOfId") || "").trim() || undefined,
   });
 
   if (!parsed.success) {
@@ -37,11 +39,24 @@ export async function createPostAction(
     return { error: PROFANITY_ERROR };
   }
 
+  // Düet kuralı: orijinal video var olmalı, düetin düeti olmaz (zincir yok).
+  if (parsed.data.duetOfId) {
+    const original = await prisma.post.findUnique({
+      where: { id: parsed.data.duetOfId },
+      select: { id: true, duetOfId: true },
+    });
+    if (!original) return { error: "Düet yapılacak video bulunamadı" };
+    if (original.duetOfId) {
+      return { error: "Düet videosuna düet yapılamaz" };
+    }
+  }
+
   const post = await prisma.post.create({
     data: {
       authorId: user.id,
       videoUrl: parsed.data.videoUrl,
       caption: parsed.data.caption ?? null,
+      duetOfId: parsed.data.duetOfId ?? null,
     },
   });
 

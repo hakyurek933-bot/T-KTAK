@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import { isActivePromo } from "@/lib/utils";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
+import { FollowButton } from "@/components/FollowButton";
 import { PlayIcon, HeartIcon } from "@/components/icons";
 import { VideoThumb } from "@/components/VideoThumb";
 
@@ -43,6 +45,73 @@ export default async function DiscoverPage() {
   ]);
 
   const [postCount, userCount, likeCount] = tags;
+  const me = await getCurrentUser();
+
+  // 👥 Arkadaş önerisi: takip ettiklerimin takip ettikleri (ortak sayılı).
+  type Suggestion = {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+    mutuals: number;
+  };
+  let suggestions: Suggestion[] = [];
+  if (me) {
+    try {
+      const following = await prisma.follow.findMany({
+        where: { followerId: me.id },
+        select: { followingId: true },
+      });
+      const fids = following.map((f) => f.followingId);
+      if (fids.length > 0) {
+        const [fof, iBlocked, blockedMe] = await Promise.all([
+          prisma.follow.findMany({
+            where: { followerId: { in: fids } },
+            select: { followerId: true, followingId: true },
+          }),
+          prisma.block
+            .findMany({
+              where: { blockerId: me.id },
+              select: { blockedId: true },
+            })
+            .catch(() => []),
+          prisma.block
+            .findMany({
+              where: { blockedId: me.id },
+              select: { blockerId: true },
+            })
+            .catch(() => []),
+        ]);
+        const excluded = new Set([
+          me.id,
+          ...fids,
+          ...iBlocked.map((b) => b.blockedId),
+          ...blockedMe.map((b) => b.blockerId),
+        ]);
+        const counts = new Map<string, number>();
+        for (const r of fof) {
+          if (excluded.has(r.followingId)) continue;
+          counts.set(r.followingId, (counts.get(r.followingId) ?? 0) + 1);
+        }
+        const topIds = [...counts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([id]) => id);
+        if (topIds.length > 0) {
+          const users = await prisma.user.findMany({
+            where: { id: { in: topIds } },
+            select: { id: true, username: true, displayName: true, avatarUrl: true },
+          });
+          suggestions = topIds.flatMap((id) => {
+            const u = users.find((x) => x.id === id);
+            return u ? [{ ...u, mutuals: counts.get(id) ?? 0 }] : [];
+          });
+        }
+      }
+    } catch {
+      suggestions = [];
+    }
+  }
 
   // Öne çıkarılanlar üstte, sonra yeniler (JS sıralaması: şema geriliğinde güvenli).
   const ordered = [...posts].sort((a, b) => {
@@ -117,6 +186,51 @@ export default async function DiscoverPage() {
                 <span className="font-semibold text-brand-2">#{t.tag}</span>{" "}
                 <span className="text-xs text-muted">{t.count}</span>
               </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Liderlik bandı */}
+      <Link
+        href="/leaderboard"
+        className="mb-6 flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-amber-400/10 to-pink-500/10 p-4 hover:border-amber-400/60"
+      >
+        <span className="text-3xl">🏆</span>
+        <span className="flex-1">
+          <span className="block text-sm font-extrabold">Haftanın yıldızları</span>
+          <span className="text-xs text-muted">
+            En çok beğenilen videolar ve hediye avcısı yayıncılar →
+          </span>
+        </span>
+      </Link>
+
+      {/* 👥 Arkadaş önerisi */}
+      {suggestions.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+            Tanıyor olabilirsin
+          </h2>
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {suggestions.map((u) => (
+              <div
+                key={u.id}
+                className="flex w-32 shrink-0 flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-panel p-3"
+              >
+                <Link
+                  href={`/u/${u.username}`}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <Avatar user={u} size={56} />
+                  <span className="w-full truncate text-center text-xs font-medium">
+                    @{u.username}
+                  </span>
+                  <span className="text-[10px] text-muted">
+                    {u.mutuals} ortak takip
+                  </span>
+                </Link>
+                <FollowButton targetId={u.id} initialFollowing={false} />
+              </div>
             ))}
           </div>
         </section>

@@ -148,12 +148,16 @@ model Post {
   viewCount Int      @default(0)
   // Coin ile öne çıkarma bitişi (bu tarihe kadar Keşfet'te üstte).
   promotedUntil DateTime?
+  // Düet: bu video başka bir videoya tepki olarak çekildiyse orijinali.
+  duetOfId String?
   createdAt DateTime @default(now())
 
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes     Like[]
   comments  Comment[]
   bookmarks Bookmark[]
+  duetOf    Post?      @relation("Duet", fields: [duetOfId], references: [id], onDelete: SetNull)
+  duets     Post[]     @relation("Duet")
 
   @@index([createdAt])
   @@index([authorId])

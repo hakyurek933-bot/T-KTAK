@@ -31,6 +31,7 @@ export type FeedItemData = {
   caption: string | null;
   viewCount: number;
   promotedUntil?: Date | string | null;
+  duetOf?: { videoUrl: string; author: { username: string } } | null;
   createdAt: Date | string;
   author: {
     id: string;
@@ -150,11 +151,32 @@ export function FeedItem({
   return (
     <section className="relative h-full w-full snap-start snap-always overflow-hidden bg-black">
       <div className="absolute inset-0">
-        <VideoPlayer
-          src={post.videoUrl}
-          onDoubleClick={handleLike}
-          onFirstVisible={handleVisible}
-        />
+        {post.duetOf ? (
+          <div className="flex h-full w-full">
+            <div className="relative h-full w-1/2 border-r border-white/20">
+              <VideoPlayer src={post.duetOf.videoUrl} />
+              <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
+                @{post.duetOf.author.username}
+              </span>
+            </div>
+            <div className="relative h-full w-1/2">
+              <VideoPlayer
+                src={post.videoUrl}
+                onDoubleClick={handleLike}
+                onFirstVisible={handleVisible}
+              />
+              <span className="absolute right-2 top-2 rounded-full bg-brand/80 px-2 py-0.5 text-[10px] font-bold text-white">
+                🎭 Senin tepkin
+              </span>
+            </div>
+          </div>
+        ) : (
+          <VideoPlayer
+            src={post.videoUrl}
+            onDoubleClick={handleLike}
+            onFirstVisible={handleVisible}
+          />
+        )}
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -293,6 +315,12 @@ export function FeedItem({
             <span className="truncate">orijinal ses — @{post.author.username}</span>
           </p>
 
+          {post.duetOf && (
+            <p className="mt-2 text-xs font-semibold text-brand-2">
+              🎭 <Link href={`/?v=${post.id}`} className="hover:underline">Düet</Link> • orijinal: @{post.duetOf.author.username}
+            </p>
+          )}
+
           {(canModerate || currentUserId === post.author.id) && (
             <form action={deletePostAction.bind(null, post.id)} className="mt-2">
               <button className="text-xs font-medium text-white/60 hover:text-red-400">
@@ -300,8 +328,16 @@ export function FeedItem({
               </button>
             </form>
           )}
-          {currentUserId && currentUserId !== post.author.id && (
-            <div className="mt-2">
+          {currentUserId && (
+            <div className="mt-2 flex items-center gap-3">
+              {currentUserId !== post.author.id && (
+                <Link
+                  href={`/upload?duet=${post.id}`}
+                  className="text-xs font-semibold text-brand-2 hover:underline"
+                >
+                  🎭 Düet yap
+                </Link>
+              )}
               <ReportButton target="POST" targetId={post.id} />
             </div>
           )}
