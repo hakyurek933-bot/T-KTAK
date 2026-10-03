@@ -51,6 +51,7 @@ export default async function DiscoverPage() {
     if (pa !== pb) return pb - pa;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+  const boosted = ordered.filter((p) => isActivePromo(p.promotedUntil)).slice(0, 10);
 
   // Son 7 günün trend etiketleri (açıklamalardan sayılır).
   let trends: { tag: string; count: number }[] = [];
@@ -141,6 +142,29 @@ export default async function DiscoverPage() {
                   @{u.username}
                 </span>
                 <span className="text-[10px] text-muted">{u._count.posts} video</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Öne çıkanlar rafı */}
+      {boosted.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+            ⚡ Öne çıkanlar
+          </h2>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {boosted.map((p) => (
+              <Link
+                key={p.id}
+                href={`/?v=${p.id}`}
+                className="relative aspect-[9/16] w-28 shrink-0 overflow-hidden rounded-xl bg-panel-2 ring-1 ring-amber-400/40"
+              >
+                <VideoThumb src={p.videoUrl} />
+                <span className="absolute bottom-1 left-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-extrabold text-black">
+                  ⚡
+                </span>
               </Link>
             ))}
           </div>

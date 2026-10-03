@@ -259,6 +259,15 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
               >
                 Aç
               </Link>
+              <a
+                href={p.videoUrl}
+                target="_blank"
+                rel="noreferrer"
+                download={`taktik-${p.id}.mp4`}
+                className="rounded-full border border-white/15 px-3 py-1 text-center text-xs font-semibold hover:border-white/40"
+              >
+                İndir
+              </a>
               {isActivePromo(p.promotedUntil) ? (
                 <span className="rounded-full bg-amber-400/15 px-3 py-1 text-center text-xs font-bold text-amber-300">
                   ⚡ Öne çıkıyor

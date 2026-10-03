@@ -235,6 +235,20 @@ export function FeedItem({
           <ShareIcon size={30} className="text-white" />
         </ActionButton>
 
+        <div className="flex flex-col items-center">
+          <a
+            href={post.videoUrl}
+            target="_blank"
+            rel="noreferrer"
+            download={`taktik-${post.id}.mp4`}
+            title="Videoyu indir"
+            className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-2xl ring-1 ring-white/20 backdrop-blur-md transition active:scale-90"
+          >
+            ⬇️
+          </a>
+          <span className="mt-1 text-xs font-semibold text-white drop-shadow">İndir</span>
+        </div>
+
         {/* İzlenme */}
         <div className="flex flex-col items-center">
           <EyeIcon size={18} className="text-white/80" />

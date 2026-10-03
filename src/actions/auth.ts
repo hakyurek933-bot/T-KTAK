@@ -372,3 +372,33 @@ export async function logoutAction() {
   await destroySession();
   redirect("/login");
 }
+
+/** Hesabını kalıcı olarak siler (videolar, yorumlar her şey gider). Kurucu silemez. */
+export async function deleteAccountAction(
+  _prev: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string } | null> {
+  const user = await requireUser();
+  if (user.role === "FOUNDER") {
+    return { error: "Kurucu hesabı silinemez" };
+  }
+
+  const confirm = String(formData.get("confirm") || "").trim();
+  if (confirm !== user.username) {
+    return { error: "Onay için kullanıcı adını aynen yazmalısın" };
+  }
+
+  const ip = await clientIp();
+  const limit = rateLimit(`delaccount:${ip}`, 5, 60 * 60 * 1000);
+  if (!limit.ok) return { error: "Çok fazla deneme. Biraz bekle." };
+
+  await createLog({
+    action: "BAN",
+    actorId: user.id,
+    targetId: user.id,
+    detail: `@${user.username} hesabını sildi`,
+  });
+  await prisma.user.delete({ where: { id: user.id } });
+  await destroySession();
+  redirect("/signup");
+}

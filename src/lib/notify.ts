@@ -27,3 +27,38 @@ export async function notify(input: NotifyInput) {
     console.error("Bildirim oluşturulamadı:", err);
   }
 }
+
+/** Metindeki @kullanıcı bahsetmelerine bildirim gönderir (en fazla 5 kişi). */
+export async function notifyMentions(input: {
+  text: string;
+  actorId: string;
+  postId?: string | null;
+  commentId?: string | null;
+}) {
+  try {
+    const names = [
+      ...new Set(
+        (input.text.match(/@([\w.]{2,30})/g) ?? []).map((m) =>
+          m.slice(1).toLowerCase()
+        )
+      ),
+    ].slice(0, 5);
+    if (names.length === 0) return;
+    const users = await prisma.user.findMany({
+      where: { username: { in: names } },
+      select: { id: true },
+    });
+    for (const u of users) {
+      if (u.id === input.actorId) continue;
+      await notify({
+        userId: u.id,
+        actorId: input.actorId,
+        type: "MENTION",
+        postId: input.postId ?? null,
+        commentId: input.commentId ?? null,
+      });
+    }
+  } catch (err) {
+    console.error("Bahsetme bildirimi oluşturulamadı:", err);
+  }
+}

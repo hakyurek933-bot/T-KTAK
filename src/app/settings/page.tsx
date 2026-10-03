@@ -7,6 +7,7 @@ import {
   PasswordForm,
 } from "@/components/ProfileSettingsForm";
 import { BlockedList } from "@/components/BlockedList";
+import { DeleteAccountForm } from "@/components/DeleteAccountForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ayarlar — Taktik" };
@@ -50,6 +51,7 @@ export default async function SettingsPage() {
         />
         <PasswordForm />
         <BlockedList />
+        <DeleteAccountForm username={me.username} />
 
         <div className="rounded-2xl border border-white/10 bg-panel p-4 text-sm">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">

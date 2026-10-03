@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { createLog } from "@/lib/log";
+import { notifyMentions } from "@/lib/notify";
 import { UPLOAD_REWARD } from "@/lib/coins";
 import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 
@@ -66,6 +67,15 @@ export async function createPostAction(
     });
   } catch {
     /* coin sistemi henüz kurulu değilse video yine de paylaşılır */
+  }
+
+  // Açıklamadaki @bahsetmeleri bildir.
+  if (parsed.data.caption) {
+    await notifyMentions({
+      text: parsed.data.caption,
+      actorId: user.id,
+      postId: post.id,
+    });
   }
 
   revalidatePath("/");

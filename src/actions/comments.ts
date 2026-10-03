@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser, isStaff } from "@/lib/auth";
 import { createLog } from "@/lib/log";
-import { notify } from "@/lib/notify";
+import { notify, notifyMentions } from "@/lib/notify";
 import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 
 const commentSchema = z.object({
@@ -79,6 +79,14 @@ export async function addCommentAction(
       commentId: comment.id,
     });
   }
+
+  // @bahsetmeleri bildir.
+  await notifyMentions({
+    text: parsed.data.body,
+    actorId: user.id,
+    postId: parsed.data.postId,
+    commentId: comment.id,
+  });
 
   revalidatePath("/");
   return null;
