@@ -9,6 +9,7 @@ import {
   hashPassword,
   verifyPassword,
   getCurrentUser,
+  requireUser,
 } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { SIGNUP_BONUS } from "@/lib/coins";
