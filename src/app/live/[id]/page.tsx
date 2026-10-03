@@ -10,8 +10,7 @@ import { Caption } from "@/components/Caption";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: PageProps<"/live/[id]">) {
-  const { id } = await params;
+export async function generateMetadata() {
   return { title: `Canlı yayın — Taktik` };
 }
 
@@ -104,7 +103,6 @@ export default async function LiveRoomPage({
         {initial ? (
           <LiveChat
             roomId={room.id}
-            isLive={room.status === "LIVE"}
             isAuthor={room.author.id === me.id}
             canModerate={isStaff(me.role)}
             initial={initial}

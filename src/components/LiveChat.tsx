@@ -8,18 +8,15 @@ import {
   type LiveSnapshot,
 } from "@/actions/live";
 import { RoleTag } from "@/components/RoleTag";
-import { timeAgo } from "@/lib/utils";
 import type { Role } from "@prisma/client";
 
 export function LiveChat({
   roomId,
-  isLive,
   isAuthor,
   canModerate,
   initial,
 }: {
   roomId: string;
-  isLive: boolean;
   isAuthor: boolean;
   canModerate: boolean;
   initial: LiveSnapshot;
