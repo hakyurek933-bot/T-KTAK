@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { UPLOAD_REWARD } from "@/lib/coins";
+import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 
 export type PostState = { error?: string; ok?: boolean } | null;
 
@@ -28,6 +29,11 @@ export async function createPostAction(
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz veri" };
+  }
+
+  // 🐺 Bozkurt Koruma: açıklama filtresi.
+  if (parsed.data.caption && containsProfanity(parsed.data.caption)) {
+    return { error: PROFANITY_ERROR };
   }
 
   const post = await prisma.post.create({

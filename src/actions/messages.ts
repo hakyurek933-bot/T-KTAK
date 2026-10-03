@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { rateLimit } from "@/lib/ratelimit";
+import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 
 const sendSchema = z.object({
   receiverId: z.string().min(1),
@@ -26,6 +27,11 @@ export async function sendMessageAction(input: {
   const parsed = sendSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz mesaj" };
+  }
+
+  // 🐺 Bozkurt Koruma: küfür filtresi.
+  if (containsProfanity(parsed.data.body)) {
+    return { error: PROFANITY_ERROR };
   }
 
   if (parsed.data.receiverId === user.id) {

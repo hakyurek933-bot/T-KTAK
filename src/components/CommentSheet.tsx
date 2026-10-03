@@ -8,6 +8,7 @@ import {
 } from "@/actions/comments";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
+import { ReportButton } from "@/components/ReportButton";
 import { timeAgo } from "@/lib/utils";
 import { HeartIcon } from "@/components/icons";
 import type { Role } from "@prisma/client";
@@ -211,6 +212,9 @@ function CommentRow({
             <HeartIcon size={14} filled={liked} />
             {count > 0 && count}
           </button>
+          {currentUserId && (
+            <ReportButton target="COMMENT" targetId={comment.id} />
+          )}
         </div>
 
         {replies.length > 0 && (

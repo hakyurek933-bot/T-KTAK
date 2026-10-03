@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfileButton } from "@/components/ShareProfileButton";
+import { ReportButton } from "@/components/ReportButton";
 import { PlayIcon, HeartIcon, GridIcon, LockIcon } from "@/components/icons";
 import { VideoThumb } from "@/components/VideoThumb";
 import { DailyBonusButton } from "@/components/DailyBonusButton";
@@ -195,6 +196,7 @@ export default async function ProfilePage({
                   Mesaj
                 </Link>
                 <ShareProfileButton username={user.username} />
+                <ReportButton target="USER" targetId={user.id} />
               </>
             )
           )}

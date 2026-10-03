@@ -8,8 +8,10 @@ import { BanForm } from "@/components/admin/BanForm";
 import { UnbanButton } from "@/components/admin/UnbanButton";
 import { RoleSelect } from "@/components/admin/RoleSelect";
 import { CoinAdjustForm } from "@/components/admin/CoinAdjustForm";
+import { ReportReviewButtons } from "@/components/admin/ReportReviewButtons";
 import { LOG_ACTION_LABELS } from "@/lib/log";
 import { COIN_REASON_LABELS, findGift } from "@/lib/coins";
+import { REPORT_TARGET_LABELS } from "@/lib/reports";
 import { timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +25,7 @@ export default async function AdminPage() {
   const isFounder = me.role === "FOUNDER";
   const myId = me.id;
 
-  const [users, logs, stats, coinData] = await Promise.all([
+  const [users, logs, stats, coinData, reportsData] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ banned: "desc" }, { createdAt: "desc" }],
       take: 100,
@@ -88,6 +90,28 @@ export default async function AdminPage() {
         return null;
       }
     })(),
+    // Şikayetler ayrı blok: tablo henüz yoksa panel yine açılır.
+    (async () => {
+      try {
+        const [open, recent] = await Promise.all([
+          prisma.report.findMany({
+            where: { status: "OPEN" },
+            orderBy: { createdAt: "desc" },
+            take: 50,
+            include: { reporter: { select: { username: true } } },
+          }),
+          prisma.report.findMany({
+            where: { status: { not: "OPEN" } },
+            orderBy: { createdAt: "desc" },
+            take: 20,
+            include: { reporter: { select: { username: true } } },
+          }),
+        ]);
+        return { open, recent };
+      } catch {
+        return null;
+      }
+    })(),
   ]);
 
   const [userCount, postCount, bannedCount, messageCount] = stats;
@@ -145,6 +169,7 @@ export default async function AdminPage() {
           { label: "Banlı", value: bannedCount },
           { label: "Mesaj", value: messageCount },
           { label: "Canlı yayın", value: coinData?.liveCount ?? "—" },
+          { label: "Açık şikayet 🐺", value: reportsData?.open.length ?? "—" },
           { label: "Hediye", value: coinData?.giftCount ?? "—" },
           { label: "Dolaşımdaki coin", value: coinData?.coinsTotal ?? "—" },
         ].map((s) => (
@@ -300,6 +325,76 @@ export default async function AdminPage() {
           <p className="rounded-2xl border border-white/10 bg-panel p-4 text-sm text-muted">
             Coin altyapısı henüz hazır değil. Yakında aktif olacak.
           </p>
+        )}
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          🐺 Bozkurt Koruma — Şikayetler
+        </h2>
+        {!reportsData ? (
+          <p className="rounded-2xl border border-white/10 bg-panel p-4 text-sm text-muted">
+            Şikayet altyapısı henüz hazır değil.
+          </p>
+        ) : reportsData.open.length === 0 ? (
+          <p className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4 text-sm text-emerald-300">
+            ✓ Bekleyen şikayet yok. Site temiz, bozkurt nöbette 🐺
+          </p>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-panel">
+            <ul className="divide-y divide-white/5">
+              {reportsData.open.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 text-sm"
+                >
+                  <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-red-300">
+                    {REPORT_TARGET_LABELS[r.target as "POST" | "COMMENT" | "USER"]}
+                  </span>
+                  <span className="text-foreground/90">
+                    @{r.reporter.username} → {r.reason}
+                    {r.detail ? `: ${r.detail}` : ""}
+                  </span>
+                  <span className="text-xs text-muted">{timeAgo(r.createdAt)}</span>
+                  <span className="ml-auto">
+                    <ReportReviewButtons
+                      reportId={r.id}
+                      canDelete={r.target !== "USER"}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {reportsData && reportsData.recent.length > 0 && (
+          <details className="mt-3 rounded-2xl border border-white/10 bg-panel p-4 text-sm">
+            <summary className="cursor-pointer font-semibold">
+              Sonuçlananlar ({reportsData.recent.length})
+            </summary>
+            <ul className="mt-2 divide-y divide-white/5">
+              {reportsData.recent.map((r) => (
+                <li key={r.id} className="flex items-center gap-2 py-1.5 text-sm">
+                  <span
+                    className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                      r.status === "REVIEWED"
+                        ? "bg-amber-400/15 text-amber-300"
+                        : "bg-white/10 text-muted"
+                    }`}
+                  >
+                    {r.status === "REVIEWED" ? "İşlem yapıldı" : "Reddedildi"}
+                  </span>
+                  <span className="text-muted">
+                    {REPORT_TARGET_LABELS[r.target as "POST" | "COMMENT" | "USER"]} ·{" "}
+                    {r.reason}
+                  </span>
+                  <span className="ml-auto text-xs text-muted">
+                    {timeAgo(r.createdAt)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </section>
 

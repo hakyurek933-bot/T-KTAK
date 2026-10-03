@@ -7,6 +7,7 @@ import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { CommentSheet, type CommentNode } from "@/components/CommentSheet";
 import { Caption } from "@/components/Caption";
+import { ReportButton } from "@/components/ReportButton";
 import {
   HeartIcon,
   CommentIcon,
@@ -284,6 +285,11 @@ export function FeedItem({
                 Videoyu sil
               </button>
             </form>
+          )}
+          {currentUserId && currentUserId !== post.author.id && (
+            <div className="mt-2">
+              <ReportButton target="POST" targetId={post.id} />
+            </div>
           )}
         </div>
       </div>

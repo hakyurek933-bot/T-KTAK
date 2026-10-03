@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, isStaff } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { rateLimit } from "@/lib/ratelimit";
+import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 
 export type StoryState = { error?: string } | null;
 
@@ -47,6 +48,11 @@ export async function createStoryAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgi" };
+  }
+
+  // 🐺 Bozkurt Koruma: açıklama filtresi.
+  if (parsed.data.caption && containsProfanity(parsed.data.caption)) {
+    return { error: PROFANITY_ERROR };
   }
 
   const story = await prisma.story.create({

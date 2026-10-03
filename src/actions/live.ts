@@ -8,6 +8,7 @@ import { requireUser, isStaff } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { getAge, LIVE_MIN_AGE } from "@/lib/age";
 import { LIVE_JOIN_TEXT } from "@/lib/utils";
+import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 import { rateLimit } from "@/lib/ratelimit";
 
 export type LiveState = { error?: string } | null;
@@ -154,6 +155,11 @@ export async function sendLiveMessageAction(input: {
   const parsed = chatSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz mesaj" };
+  }
+
+  // 🐺 Bozkurt Koruma: küfür filtresi.
+  if (containsProfanity(parsed.data.body)) {
+    return { error: PROFANITY_ERROR };
   }
 
   let room: { status: string } | null = null;

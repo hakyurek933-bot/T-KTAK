@@ -33,6 +33,8 @@ enum LogAction {
   DAILY_BONUS
   STORY_CREATE
   STORY_DELETE
+  REPORT_CREATE
+  REPORT_REVIEW
   MESSAGE_SEND
   BAN
   UNBAN
@@ -61,6 +63,18 @@ enum NotificationType {
   FOLLOW
   MENTION
   LIVE
+}
+
+enum ReportTarget {
+  POST
+  COMMENT
+  USER
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
 }
 
 model User {
@@ -114,6 +128,9 @@ model User {
   // Hikayeler
   stories     Story[]     @relation("StoryAuthor")
   storyViews  StoryView[] @relation("StoryViewer")
+
+  // Yaptığı şikayetler
+  reports Report[] @relation("Reporter")
 }
 
 model Post {
@@ -322,6 +339,23 @@ model StoryView {
 
   @@unique([storyId, userId])
   @@index([storyId])
+}
+
+// 🐺 Bozkurt Koruma: üye şikayetleri. Ekip inceler, sonuçlandırır.
+model Report {
+  id        String       @id @default(cuid())
+  reporterId String
+  target    ReportTarget
+  targetId  String
+  reason    String
+  detail    String?
+  status    ReportStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+
+  reporter User @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([reporterId])
 }
 
 // E-posta doğrulama kodları (6 haneli, 15 dakika geçerli).

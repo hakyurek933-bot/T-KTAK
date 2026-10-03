@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, isStaff } from "@/lib/auth";
 import { createLog } from "@/lib/log";
 import { notify } from "@/lib/notify";
+import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 
 const commentSchema = z.object({
   postId: z.string().min(1),
@@ -26,6 +27,11 @@ export async function addCommentAction(
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz yorum" };
+  }
+
+  // 🐺 Bozkurt Koruma: küfür filtresi.
+  if (containsProfanity(parsed.data.body)) {
+    return { error: PROFANITY_ERROR };
   }
 
   const post = await prisma.post.findUnique({
