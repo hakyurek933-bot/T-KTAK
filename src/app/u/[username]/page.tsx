@@ -7,6 +7,7 @@ import { RoleTag } from "@/components/RoleTag";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { PlayIcon, HeartIcon, GridIcon, LockIcon } from "@/components/icons";
+import { VideoThumb } from "@/components/VideoThumb";
 import { DailyBonusButton } from "@/components/DailyBonusButton";
 import { formatCount } from "@/lib/utils";
 
@@ -146,6 +147,12 @@ export default async function ProfilePage({
               >
                 🔖 Kaydedilenler
               </Link>
+              <Link
+                href="/studio"
+                className="rounded-full border border-white/20 px-6 py-2.5 text-sm font-semibold hover:border-white/40"
+              >
+                🎬 Videolarım
+              </Link>
               <ShareProfileButton username={user.username} />
               <Link
                 href="/upload"
@@ -213,13 +220,7 @@ export default async function ProfilePage({
               href={`/?v=${p.id}`}
               className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-panel-2"
             >
-              <video
-                src={p.videoUrl}
-                muted
-                playsInline
-                preload="metadata"
-                className="h-full w-full object-cover"
-              />
+              <VideoThumb src={p.videoUrl} />
               <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
               <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-xs font-semibold text-white drop-shadow">
                 <PlayIcon size={12} />

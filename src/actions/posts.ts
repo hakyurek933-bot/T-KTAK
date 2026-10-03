@@ -84,4 +84,5 @@ export async function deletePostAction(postId: string) {
   });
 
   revalidatePath("/");
+  revalidatePath("/studio");
 }

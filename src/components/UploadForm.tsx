@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { createPostAction, type PostState } from "@/actions/posts";
+import { MAX_VIDEO_BYTES, probeFilePlayable } from "@/lib/video-probe";
 
 export function UploadForm() {
   const [state, action, pending] = useActionState<PostState, FormData>(
@@ -18,41 +19,9 @@ export function UploadForm() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  /** Dosya gerçekten bu tarayıcıda oynatılabiliyor mu? (codec/format tuzağı) */
-  function probePlayable(file: File): Promise<boolean> {
-    return new Promise((resolve) => {
-      try {
-        const test = document.createElement("video");
-        if (file.type && test.canPlayType(file.type) === "") {
-          resolve(false);
-          return;
-        }
-      } catch {
-        /* ön kontrol başarısızsa gerçek yükleme testine devam et */
-      }
-      const url = URL.createObjectURL(file);
-      const v = document.createElement("video");
-      v.preload = "auto";
-      v.muted = true;
-      const timer = setTimeout(() => finish(false), 10000);
-      function finish(ok: boolean) {
-        clearTimeout(timer);
-        v.removeAttribute("src");
-        v.load();
-        URL.revokeObjectURL(url);
-        resolve(ok);
-      }
-      v.addEventListener("error", () => finish(false), { once: true });
-      v.addEventListener("canplay", () => finish(true), { once: true });
-      v.src = url;
-    });
-  }
-
-  const MAX_BYTES = 50 * 1024 * 1024;
-
   async function handleFile(file: File) {
     setUploadError(null);
-    if (file.size > MAX_BYTES) {
+    if (file.size > MAX_VIDEO_BYTES) {
       setUploadError(
         `Video çok büyük (${(file.size / 1024 / 1024).toFixed(1)} MB). En fazla 50 MB yükleyebilirsin — daha kısa bir video dene.`
       );
@@ -62,7 +31,7 @@ export function UploadForm() {
     setChecking(true);
     setProgress(0);
     try {
-      const playable = await probePlayable(file);
+      const playable = await probeFilePlayable(file);
       setChecking(false);
       if (!playable) {
         setUploadError(

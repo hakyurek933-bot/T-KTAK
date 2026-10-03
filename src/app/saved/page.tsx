@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { PlayIcon, HeartIcon } from "@/components/icons";
+import { VideoThumb } from "@/components/VideoThumb";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Kaydedilenler — Taktik" };
@@ -51,13 +52,7 @@ export default async function SavedPage() {
               href={`/?v=${post.id}`}
               className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-panel-2"
             >
-              <video
-                src={post.videoUrl}
-                muted
-                playsInline
-                preload="metadata"
-                className="h-full w-full object-cover"
-              />
+              <VideoThumb src={post.videoUrl} />
               <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
               <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-xs font-semibold text-white drop-shadow">
                 <PlayIcon size={12} />@{post.author.username}

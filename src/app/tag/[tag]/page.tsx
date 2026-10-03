@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PlayIcon, HeartIcon } from "@/components/icons";
+import { VideoThumb } from "@/components/VideoThumb";
 
 export const dynamic = "force-dynamic";
 
@@ -51,13 +52,7 @@ export default async function TagPage({ params }: PageProps<"/tag/[tag]">) {
               href={`/?v=${p.id}`}
               className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-panel-2"
             >
-              <video
-                src={p.videoUrl}
-                muted
-                playsInline
-                preload="metadata"
-                className="h-full w-full object-cover"
-              />
+              <VideoThumb src={p.videoUrl} />
               <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
               <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-xs font-semibold text-white drop-shadow">
                 <PlayIcon size={12} />@{p.author.username}
