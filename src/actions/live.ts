@@ -12,8 +12,8 @@ import { rateLimit } from "@/lib/ratelimit";
 
 export type LiveState = { error?: string } | null;
 
-/** İzleyici sayımı için nabız aralığı (saniye). */
-const VIEWER_TTL_SEC = 90;
+/** İzleyici sayımı için nabız aralığı (saniye). Kısa tutulur ki hayalet sayılmasın. */
+const VIEWER_TTL_SEC = 45;
 
 const startSchema = z.object({
   title: z.string().trim().min(3, "Başlık en az 3 karakter").max(80),
@@ -261,23 +261,34 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
   if (!room) return null;
 
   // Nabız: izleyici listesini taze tut. İlk girişte katılma mesajı bırak.
+  // Yayın bitmişse kimseyi sayma; bayat satırları temizle ki sayı gerçek kalsın.
   try {
-    const seen = await prisma.liveViewer.findUnique({
-      where: { roomId_userId: { roomId, userId: user.id } },
-      select: { id: true },
-    });
-    if (!seen && room.status === "LIVE") {
-      await prisma.liveMessage
-        .create({
-          data: { roomId, authorId: user.id, body: LIVE_JOIN_TEXT },
-        })
-        .catch(() => {});
+    await prisma.liveViewer
+      .deleteMany({
+        where: {
+          roomId,
+          lastSeen: { lt: new Date(Date.now() - VIEWER_TTL_SEC * 1000) },
+        },
+      })
+      .catch(() => {});
+    if (room.status === "LIVE") {
+      const seen = await prisma.liveViewer.findUnique({
+        where: { roomId_userId: { roomId, userId: user.id } },
+        select: { id: true },
+      });
+      if (!seen) {
+        await prisma.liveMessage
+          .create({
+            data: { roomId, authorId: user.id, body: LIVE_JOIN_TEXT },
+          })
+          .catch(() => {});
+      }
+      await prisma.liveViewer.upsert({
+        where: { roomId_userId: { roomId, userId: user.id } },
+        update: { lastSeen: new Date() },
+        create: { roomId, userId: user.id },
+      });
     }
-    await prisma.liveViewer.upsert({
-      where: { roomId_userId: { roomId, userId: user.id } },
-      update: { lastSeen: new Date() },
-      create: { roomId, userId: user.id },
-    });
   } catch {
     /* sayaç kaçırılabilir, kritik değil */
   }

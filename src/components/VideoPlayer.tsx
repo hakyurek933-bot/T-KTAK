@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { PlayIcon } from "@/components/icons";
 
-// Oturum boyu hatırlanan ses tercihi (bir videoda açınca hepsinde açık kalır).
-let sessionMuted = true;
+// Oturum boyu hatırlanan ses tercihi (varsayılan AÇIK; kapatanın seçimi hatırlanır).
+let sessionMuted = false;
 let hintShown = false;
 
 /**
@@ -31,9 +31,6 @@ export function VideoPlayer({
   useEffect(() => {
     visibleRef.current = onFirstVisible;
   }, [onFirstVisible]);
-  useEffect(() => {
-    if (ref.current) ref.current.muted = sessionMuted;
-  }, [retryKey]);
   const [muted, setMuted] = useState(sessionMuted);
   const [showHint, setShowHint] = useState(!hintShown);
   const [paused, setPaused] = useState(false);
@@ -64,9 +61,20 @@ export function VideoPlayer({
               seenRef.current = true;
               visibleRef.current?.();
             }
+            el.muted = sessionMuted;
+            setMuted(sessionMuted);
             el.play()
               .then(() => setPaused(false))
-              .catch(() => setPaused(true));
+              .catch(() => {
+                // Tarayıcı sesli otomatik oynatmayı engellediyse sessiz dene.
+                el.muted = true;
+                setMuted(true);
+                setShowHint(true);
+                el
+                  .play()
+                  .then(() => setPaused(false))
+                  .catch(() => setPaused(true));
+              });
           } else {
             el.pause();
           }

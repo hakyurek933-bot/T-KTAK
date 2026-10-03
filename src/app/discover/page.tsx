@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { isActivePromo } from "@/lib/utils";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { PlayIcon, HeartIcon } from "@/components/icons";

@@ -13,7 +13,7 @@ export async function generateMetadata() {
 }
 
 function recentCutoff() {
-  return new Date(Date.now() - 90_000);
+  return new Date(Date.now() - 45_000);
 }
 
 export default async function LiveRoomPage({
