@@ -144,12 +144,18 @@ export default async function ProfilePage({
     <div className="mx-auto w-full max-w-2xl px-3 py-5">
       {/* Üst profil kartı */}
       <div className="flex flex-col items-center gap-3 py-4">
-        {coverUrl && (
-          <div className="h-36 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-brand/40 via-brand-2/30 to-brand/40">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        <div className="h-36 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-brand/50 via-brand-2/40 to-brand/50">
+          {coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={coverUrl} alt="" className="h-full w-full object-cover" />
-          </div>
-        )}
+          ) : (
+            <div className="grid h-full w-full place-items-center">
+              <span className="truncate px-4 text-3xl font-black tracking-tight text-white/25">
+                @{user.username}
+              </span>
+            </div>
+          )}
+        </div>
         <Avatar user={user} size={96} />
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-bold">@{user.username}</h1>

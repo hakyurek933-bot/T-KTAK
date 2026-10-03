@@ -39,6 +39,16 @@ const postInclude = {
   comments: commentInclude,
 };
 
+/** Sana Özel akışı her açılışta karıştırır (aynı videolar üst üste gelmez). */
+function shuffleForYou<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default async function HomePage({
   searchParams,
 }: PageProps<"/">) {
@@ -88,9 +98,12 @@ export default async function HomePage({
   const posts = await prisma.post.findMany({
     where: authorFilter ? { authorId: authorFilter } : undefined,
     orderBy: { createdAt: "desc" },
-    take: 30,
+    take: 50,
     include: postInclude,
   });
+
+  // Sana Özel karışık, Takip kronolojik.
+  const feedPosts = tab === "following" ? posts : shuffleForYou(posts);
 
   const followedSet = new Set(followingIds);
 
@@ -152,7 +165,7 @@ export default async function HomePage({
       {user && <StoryStrip />}
 
       <Feed
-        posts={posts}
+        posts={feedPosts}
         currentUserId={user?.id}
         canModerate={!!user && isStaff(user.role)}
         followedIds={followedSet}
