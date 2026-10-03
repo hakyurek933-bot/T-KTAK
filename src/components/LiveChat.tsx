@@ -22,11 +22,13 @@ export function LiveChat({
   isAuthor,
   canModerate,
   initial,
+  compact = false,
 }: {
   roomId: string;
   isAuthor: boolean;
   canModerate: boolean;
   initial: LiveSnapshot;
+  compact?: boolean;
 }) {
   const [snapshot, setSnapshot] = useState<LiveSnapshot>(initial);
   const [text, setText] = useState("");
@@ -117,7 +119,11 @@ export function LiveChat({
   }
 
   return (
-    <div className="flex h-[60vh] flex-col overflow-hidden rounded-2xl border border-white/10 bg-panel md:h-[70vh]">
+    <div
+      className={`flex flex-col overflow-hidden bg-panel ${
+        compact ? "h-full border-0 bg-transparent" : "h-[60vh] rounded-2xl border border-white/10 md:h-[70vh]"
+      }`}
+    >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
         <span className="text-sm font-semibold">
           {live ? (

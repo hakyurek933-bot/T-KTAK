@@ -5,6 +5,9 @@
 export const SIGNUP_BONUS = 100;
 export const DAILY_BONUS = 50;
 export const UPLOAD_REWARD = 10;
+/** Video öne çıkarma ücreti (24 saat Keşfet'te üstte). */
+export const PROMOTE_COST = 100;
+export const PROMOTE_HOURS = 24;
 
 export type Gift = {
   key: string;
@@ -35,6 +38,7 @@ export const COIN_REASON_LABELS: Record<string, string> = {
   GIFT_SENT: "Hediye gönderdi",
   GIFT_EARNED: "Hediye kazandı",
   ADMIN_ADJUST: "Yönetici düzenledi",
+  PROMOTE: "Öne çıkarma",
 };
 
 /** İki tarihin aynı takvim gününde olup olmadığı (günlük bonus için). */

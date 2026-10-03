@@ -31,7 +31,7 @@ Yerli TikTok — kısa video paylaşımı + mesajlaşma platformu. **Kurucu tag'
 | 🚫 Ban paneli | Banla / banı kaldır, sebep gir; yetki hiyerarşisi |
 | 📜 Log paneli | Kayıt, giriş, video, yorum, mesaj, ban, rol değişimi |
 | 🔴 Canlı yayın | Yayın odası + canlı sohbet + izleyici sayacı + kalp yağmuru + hediyeler (açmak için 15+ yaş) |
-| 🪙 Taktik Coin | Kayıt bonusu (100), günlük bonus (50), video ödülü (10), canlı hediye geliri; admin coin yönetimi |
+| 🪙 Taktik Coin | Kayıt bonusu (100), günlük bonus (50), video ödülü (10), canlı hediye geliri; harcama: hediye + video öne çıkarma; admin coin yönetimi |
 | 👤 Profil sistemi | Avatar yükleme, bio, takip/takipçi/beğeni sayaçları, Videolar/Beğeniler sekmeleri, profil paylaşma |
 | 👑 Roller | FOUNDER (kurucu), MOD (moderatör), USER (üye) |
 

@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { deletePostAction } from "@/actions/posts";
+import { promotePostAction } from "@/actions/coins";
+import { PROMOTE_COST } from "@/lib/coins";
 import { probeUrlPlayable } from "@/lib/video-probe";
 import { VideoThumb } from "@/components/VideoThumb";
-import { formatCount, timeAgo } from "@/lib/utils";
+import { formatCount, timeAgo, isActivePromo } from "@/lib/utils";
 
 export type StudioPost = {
   id: string;
   videoUrl: string;
   caption: string | null;
   viewCount: number;
+  promotedUntil: string | null;
   createdAt: string;
   likes: number;
   comments: number;
@@ -22,6 +25,8 @@ type Status = "check" | "ok" | "bad";
 /** Videolarım listesi: sağlamlık rozeti + istatistik + tek tık silme. */
 export function StudioList({ posts }: { posts: StudioPost[] }) {
   const [items, setItems] = useState(posts);
+  const [promoBusy, setPromoBusy] = useState<string | null>(null);
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
   const [status, setStatus] = useState<Record<string, Status>>(() =>
     Object.fromEntries(posts.map((p) => [p.id, "check" as Status]))
   );
@@ -82,6 +87,32 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
 
   const badCount = items.filter((p) => status[p.id] === "bad").length;
 
+  async function handlePromote(id: string) {
+    if (
+      !confirm(
+        `Bu video 24 saat Keşfet'te öne çıksın mı? (${PROMOTE_COST}🪙)`
+      )
+    )
+      return;
+    setPromoBusy(id);
+    setPromoMsg(null);
+    try {
+      const res = await promotePostAction(id);
+      if (res.error) {
+        setPromoMsg(res.error);
+      } else {
+        setPromoMsg("Video öne çıkarıldı! ⚡");
+        setItems((list) =>
+          list.map((p) =>
+            p.id === id ? { ...p, promotedUntil: res.until ?? null } : p
+          )
+        );
+      }
+    } finally {
+      setPromoBusy(null);
+    }
+  }
+
   if (items.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/15 p-10 text-center text-muted">
@@ -112,6 +143,11 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
             {deleting !== null ? "Siliniyor..." : `🗑 Bozukları toplu sil (${badCount})`}
           </button>
         </div>
+      )}
+      {promoMsg && (
+        <p className="mb-3 rounded-xl border border-amber-400/25 bg-amber-400/5 px-4 py-2 text-xs text-amber-200">
+          {promoMsg}
+        </p>
       )}
       <ul className="flex flex-col gap-3">
       {items.map((p) => {
@@ -160,6 +196,21 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
               >
                 Aç
               </Link>
+              {isActivePromo(p.promotedUntil) ? (
+                <span className="rounded-full bg-amber-400/15 px-3 py-1 text-center text-xs font-bold text-amber-300">
+                  ⚡ Öne çıkıyor
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handlePromote(p.id)}
+                  disabled={promoBusy !== null || deleting !== null}
+                  title={`24 saat Keşfet'te üstte (${PROMOTE_COST} coin)`}
+                  className="rounded-full border border-amber-400/40 px-3 py-1 text-center text-xs font-semibold text-amber-300 hover:bg-amber-400/10 disabled:opacity-50"
+                >
+                  {promoBusy === p.id ? "..." : `⚡ ${PROMOTE_COST}🪙`}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => handleDelete(p.id)}

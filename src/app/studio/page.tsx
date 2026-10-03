@@ -17,6 +17,7 @@ export default async function StudioPage() {
     videoUrl: string;
     caption: string | null;
     viewCount: number;
+    promotedUntil: Date | null;
     createdAt: Date;
     _count: { likes: number; comments: number };
   }[] = [];
@@ -29,6 +30,7 @@ export default async function StudioPage() {
         videoUrl: true,
         caption: true,
         viewCount: true,
+        promotedUntil: true,
         createdAt: true,
         _count: { select: { likes: true, comments: true } },
       },
@@ -64,6 +66,7 @@ export default async function StudioPage() {
           videoUrl: p.videoUrl,
           caption: p.caption,
           viewCount: p.viewCount,
+          promotedUntil: p.promotedUntil ? p.promotedUntil.toISOString() : null,
           createdAt: p.createdAt.toISOString(),
           likes: p._count.likes,
           comments: p._count.comments,

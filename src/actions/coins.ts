@@ -8,9 +8,12 @@ import { createLog } from "@/lib/log";
 import { rateLimit } from "@/lib/ratelimit";
 import {
   DAILY_BONUS,
+  PROMOTE_COST,
+  PROMOTE_HOURS,
   findGift,
   isSameDay,
 } from "@/lib/coins";
+import { isActivePromo } from "@/lib/utils";
 
 export type CoinState = { error?: string; ok?: boolean; balance?: number } | null;
 
@@ -251,4 +254,68 @@ export async function adminAdjustCoinsAction(
 
   revalidatePath("/admin");
   return { ok: true, balance: updated.coinBalance };
+}
+
+/** Videoyu 24 saat Keşfet'te öne çıkarır (100 coin). Yalnızca kendi videon. */
+export async function promotePostAction(
+  postId: string
+): Promise<{ error?: string; ok?: boolean; until?: string }> {
+  const user = await requireUser();
+
+  const limit = rateLimit(`promote:${user.id}`, 10, 60 * 60 * 1000);
+  if (!limit.ok) return { error: "Çok fazla deneme. Biraz bekle." };
+
+  if (!(await checkCoinTables())) {
+    return { error: "Coin sistemi henüz hazır değil, sonra tekrar dene" };
+  }
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true, promotedUntil: true },
+  });
+  if (!post || post.authorId !== user.id) {
+    return { error: "Yalnızca kendi videonu öne çıkarabilirsin" };
+  }
+  if (isActivePromo(post.promotedUntil)) {
+    return { error: "Bu video zaten öne çıkıyor ⚡" };
+  }
+
+  const account = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { coinBalance: true, username: true },
+  });
+  if (!account || account.coinBalance < PROMOTE_COST) {
+    return {
+      error: `Yetersiz coin (${PROMOTE_COST}🪙 gerekli). Günlük bonusla biriktirebilirsin!`,
+    };
+  }
+
+  const until = new Date(Date.now() + PROMOTE_HOURS * 60 * 60 * 1000);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { coinBalance: { decrement: PROMOTE_COST } },
+  });
+  await prisma.coinTransaction.create({
+    data: {
+      userId: user.id,
+      amount: -PROMOTE_COST,
+      reason: "PROMOTE",
+      note: `Video öne çıkarma (${postId})`,
+    },
+  });
+  await prisma.post.update({
+    where: { id: postId },
+    data: { promotedUntil: until },
+  });
+  await createLog({
+    action: "COIN_ADJUST",
+    actorId: user.id,
+    detail: `@${user.username} videosunu öne çıkardı (-${PROMOTE_COST})`,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/discover");
+  revalidatePath("/studio");
+  revalidatePath(`/u/${account.username}`);
+  return { ok: true, until: until.toISOString() };
 }

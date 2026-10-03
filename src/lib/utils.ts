@@ -5,6 +5,17 @@ export function cn(...classes: Array<string | false | null | undefined>) {
 /** Canlı yayına katılma sistem mesajı (sohbette ortalanmış gösterilir). */
 export const LIVE_JOIN_TEXT = "yayına katıldı 👋";
 
+/** Coin ile öne çıkarma aktif mi? (saf fonksiyon, sunucu+istemcide kullanılır) */
+export function isActivePromo(ts: Date | string | null | undefined): boolean {
+  if (!ts) return false;
+  const t = typeof ts === "string" ? new Date(ts).getTime() : ts.getTime();
+  return Number.isFinite(t) && t > nowMs();
+}
+
+function nowMs() {
+  return Date.now();
+}
+
 /** "3 dk önce" tarzı Türkçe göreli zaman. */
 export function timeAgo(date: Date | string) {
   const d = typeof date === "string" ? new Date(date) : date;

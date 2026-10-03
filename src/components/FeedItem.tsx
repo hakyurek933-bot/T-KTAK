@@ -20,7 +20,7 @@ import { toggleLikeAction } from "@/actions/likes";
 import { toggleBookmarkAction } from "@/actions/bookmarks";
 import { toggleFollowAction } from "@/actions/follow";
 import { incrementViewAction } from "@/actions/views";
-import { timeAgo, formatCount } from "@/lib/utils";
+import { timeAgo, formatCount, isActivePromo } from "@/lib/utils";
 import { deletePostAction } from "@/actions/posts";
 import type { Role } from "@prisma/client";
 
@@ -29,6 +29,7 @@ export type FeedItemData = {
   videoUrl: string;
   caption: string | null;
   viewCount: number;
+  promotedUntil?: Date | string | null;
   createdAt: Date | string;
   author: {
     id: string;
@@ -69,6 +70,8 @@ export function FeedItem({
   const [commentCount, setCommentCount] = useState(post.comments.length);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [hearts, setHearts] = useState<number[]>([]);
+  const boosted = isActivePromo(post.promotedUntil);
 
   function handleVisible() {
     incrementViewAction(post.id).catch(() => {});
@@ -81,6 +84,13 @@ export function FeedItem({
     setLikeCount((c) => c + (next ? 1 : -1));
     setPop(true);
     setTimeout(() => setPop(false), 320);
+    if (next) {
+      const id = Date.now() + Math.random();
+      setHearts((h) => [...h.slice(-9), id]);
+      setTimeout(() => {
+        setHearts((h) => h.filter((x) => x !== id));
+      }, 900);
+    }
     startTransition(async () => {
       try {
         const res = await toggleLikeAction(post.id);
@@ -147,6 +157,25 @@ export function FeedItem({
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/50 to-transparent" />
+
+      {/* Beğeni kalp yağmuru */}
+      {hearts.map((id, i) => (
+        <span
+          key={id}
+          className="pointer-events-none absolute bottom-1/3 z-20 animate-float-heart text-3xl"
+          style={{ right: `${8 + i * 3}%` }}
+        >
+          ❤️
+        </span>
+      ))}
+      <style jsx>{`
+        @keyframes float-heart {
+          0% { opacity: 1; transform: translateY(0) scale(0.6); }
+          100% { opacity: 0; transform: translateY(-110px) scale(1.4); }
+        }
+        .animate-float-heart { animation: float-heart 0.9s ease-out forwards; }
+      `}</style>
 
       {/* Sağ aksiyon çubuğu */}
       <div className="absolute bottom-24 right-3 z-20 flex flex-col items-center gap-4">
@@ -177,13 +206,17 @@ export function FeedItem({
 
         <ActionButton
           onClick={handleLike}
-          label={String(likeCount)}
+          label={formatCount(likeCount)}
           className={pop ? "animate-pop" : ""}
         >
-          <HeartIcon size={32} filled={liked} className="text-white" />
+          <HeartIcon
+            size={32}
+            filled={liked}
+            className={liked ? "text-[#fe2c55] drop-shadow-[0_0_8px_rgba(254,44,85,0.8)]" : "text-white"}
+          />
         </ActionButton>
 
-        <ActionButton onClick={() => setSheetOpen(true)} label={String(commentCount)}>
+        <ActionButton onClick={() => setSheetOpen(true)} label={formatCount(commentCount)}>
           <CommentIcon size={32} className="text-white" />
         </ActionButton>
 
@@ -225,6 +258,14 @@ export function FeedItem({
               @{post.author.username}
             </Link>
             <RoleTag role={post.author.role} />
+            {boosted && (
+              <span
+                className="rounded-full bg-amber-400/90 px-2 py-0.5 text-[10px] font-extrabold text-black"
+                title="Coin ile öne çıkarılmış video"
+              >
+                ⚡ Öne çıkan
+              </span>
+            )}
             <span className="text-xs text-white/60">{timeAgo(post.createdAt)}</span>
           </div>
 
@@ -277,11 +318,11 @@ function ActionButton({
       <button
         type="button"
         onClick={onClick}
-        className={`grid h-12 w-12 place-items-center rounded-full bg-black/30 backdrop-blur-sm ${className}`}
+        className={`grid h-12 w-12 place-items-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-md transition active:scale-90 ${className}`}
       >
         {children}
       </button>
-      <span className="mt-1 text-xs font-semibold text-white">{label}</span>
+      <span className="mt-1 text-xs font-semibold text-white drop-shadow">{label}</span>
     </div>
   );
 }

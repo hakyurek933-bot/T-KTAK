@@ -51,6 +51,7 @@ enum CoinReason {
   GIFT_SENT
   GIFT_EARNED
   ADMIN_ADJUST
+  PROMOTE
 }
 
 enum NotificationType {
@@ -121,6 +122,8 @@ model Post {
   videoUrl  String
   caption   String?
   viewCount Int      @default(0)
+  // Coin ile öne çıkarma bitişi (bu tarihe kadar Keşfet'te üstte).
+  promotedUntil DateTime?
   createdAt DateTime @default(now())
 
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)

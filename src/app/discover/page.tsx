@@ -43,6 +43,14 @@ export default async function DiscoverPage() {
 
   const [postCount, userCount, likeCount] = tags;
 
+  // Öne çıkarılanlar üstte, sonra yeniler (JS sıralaması: şema geriliğinde güvenli).
+  const ordered = [...posts].sort((a, b) => {
+    const pa = a.promotedUntil && new Date(a.promotedUntil).getTime() > Date.now() ? 1 : 0;
+    const pb = b.promotedUntil && new Date(b.promotedUntil).getTime() > Date.now() ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
   // Son 7 günün trend etiketleri (açıklamalardan sayılır).
   let trends: { tag: string; count: number }[] = [];
   try {
@@ -156,7 +164,7 @@ export default async function DiscoverPage() {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-1 sm:gap-2">
-            {posts.map((p) => (
+            {ordered.map((p) => (
               <Link
                 key={p.id}
                 href={`/?v=${p.id}`}
