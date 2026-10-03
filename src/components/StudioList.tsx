@@ -22,13 +22,14 @@ type Status = "check" | "ok" | "bad";
 /** Videolarım listesi: sağlamlık rozeti + istatistik + tek tık silme. */
 export function StudioList({ posts }: { posts: StudioPost[] }) {
   const [items, setItems] = useState(posts);
-  const [status, setStatus] = useState<Record<string, Status>>({});
+  const [status, setStatus] = useState<Record<string, Status>>(() =>
+    Object.fromEntries(posts.map((p) => [p.id, "check" as Status]))
+  );
   const [deleting, setDeleting] = useState<string | null>(null);
 
   // Videoları sırayla yokla (ağı yormamak için tek tek).
   useEffect(() => {
     let alive = true;
-    setStatus(Object.fromEntries(posts.map((p) => [p.id, "check" as Status])));
     (async () => {
       for (const p of posts) {
         if (!alive) break;
