@@ -159,15 +159,27 @@ export async function sendLiveMessageAction(input: {
   return { ok: true };
 }
 
+export type LiveGiftView = {
+  id: string;
+  gift: string;
+  count: number;
+  cost: number;
+  createdAt: string;
+  sender: { username: string };
+};
+
 export type LiveSnapshot = {
   status: string;
   viewers: number;
+  likes: number;
+  balance: number;
   messages: {
     id: string;
     body: string;
     createdAt: string;
     author: { username: string; role: string };
   }[];
+  gifts: LiveGiftView[];
 };
 
 /** Canlı sohbet + izleyici sayısı anlık görüntüsü (istemci yoklaması için). */
@@ -176,11 +188,20 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
 
   let room: {
     status: string;
+    likeCount: number;
     messages: {
       id: string;
       body: string;
       createdAt: Date;
       author: { username: string; role: "FOUNDER" | "MOD" | "USER" };
+    }[];
+    gifts: {
+      id: string;
+      gift: string;
+      count: number;
+      cost: number;
+      createdAt: Date;
+      sender: { username: string };
     }[];
   } | null = null;
   try {
@@ -188,6 +209,7 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
       where: { id: roomId },
       select: {
         status: true,
+        likeCount: true,
         messages: {
           orderBy: { createdAt: "desc" },
           take: 60,
@@ -196,6 +218,18 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
             body: true,
             createdAt: true,
             author: { select: { username: true, role: true } },
+          },
+        },
+        gifts: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            gift: true,
+            count: true,
+            cost: true,
+            createdAt: true,
+            sender: { select: { username: true } },
           },
         },
       },
@@ -217,6 +251,7 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
   }
 
   let viewers = 0;
+  let balance = 0;
   try {
     viewers = await prisma.liveViewer.count({
       where: {
@@ -227,15 +262,34 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
   } catch {
     /* sayaç kaçırılabilir */
   }
+  try {
+    const account = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { coinBalance: true },
+    });
+    balance = account?.coinBalance ?? 0;
+  } catch {
+    /* coin tablosu hazır değilse bakiye 0 görünür */
+  }
 
   return {
     status: room.status,
     viewers,
+    likes: room.likeCount,
+    balance,
     messages: room.messages.reverse().map((m) => ({
       id: m.id,
       body: m.body,
       createdAt: m.createdAt.toISOString(),
       author: { username: m.author.username, role: m.author.role },
+    })),
+    gifts: room.gifts.reverse().map((g) => ({
+      id: g.id,
+      gift: g.gift,
+      count: g.count,
+      cost: g.cost,
+      createdAt: g.createdAt.toISOString(),
+      sender: { username: g.sender.username },
     })),
   };
 }

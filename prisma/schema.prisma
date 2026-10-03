@@ -28,6 +28,9 @@ enum LogAction {
   EMAIL_VERIFY
   LIVE_START
   LIVE_END
+  GIFT_SEND
+  COIN_ADJUST
+  DAILY_BONUS
   MESSAGE_SEND
   BAN
   UNBAN
@@ -37,6 +40,15 @@ enum LogAction {
 enum LiveStatus {
   LIVE
   ENDED
+}
+
+enum CoinReason {
+  SIGNUP_BONUS
+  DAILY_BONUS
+  UPLOAD_REWARD
+  GIFT_SENT
+  GIFT_EARNED
+  ADMIN_ADJUST
 }
 
 enum NotificationType {
@@ -64,6 +76,10 @@ model User {
   bannedAt     DateTime?
   createdAt    DateTime @default(now())
 
+  // Taktik Coin: kayıt bonusu, günlük bonus, video ödülü, canlı hediyeler.
+  coinBalance      Int       @default(0)
+  lastDailyBonusAt DateTime?
+
   posts             Post[]
   likes             Like[]
   comments          Comment[]
@@ -86,6 +102,10 @@ model User {
   liveRooms    LiveRoom[]    @relation("LiveAuthor")
   liveMessages LiveMessage[]
   liveViewers  LiveViewer[]
+
+  // Coin hareketleri ve gönderilen hediyeler
+  coinTransactions CoinTransaction[]
+  sentGifts        LiveGift[]        @relation("GiftSender")
 }
 
 model Post {
@@ -226,12 +246,14 @@ model LiveRoom {
   title     String
   videoUrl  String
   status    LiveStatus @default(LIVE)
+  likeCount Int        @default(0)
   startedAt DateTime   @default(now())
   endedAt   DateTime?
 
   author   User          @relation("LiveAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   messages LiveMessage[]
   viewers  LiveViewer[]
+  gifts    LiveGift[]
 
   @@index([status, startedAt])
 }
@@ -271,4 +293,36 @@ model VerificationCode {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+// Taktik Coin hareket defteri. Her coin değişimi buraya işlenir.
+model CoinTransaction {
+  id        String     @id @default(cuid())
+  userId    String
+  amount    Int
+  reason    CoinReason
+  note      String?
+  createdAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// Canlı yayında gönderilen hediye. Ücret gönderenden düşer,
+// yayıncıya coin olarak eklenir.
+model LiveGift {
+  id        String   @id @default(cuid())
+  roomId    String
+  senderId  String
+  gift      String
+  count     Int      @default(1)
+  cost      Int
+  createdAt DateTime @default(now())
+
+  room   LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
 }

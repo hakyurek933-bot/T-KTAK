@@ -26,7 +26,14 @@ export async function POST(request: Request): Promise<Response> {
         if (!user) throw new Error("Yükleme için giriş yapmalısınız.");
 
         return {
-          allowedContentTypes: ["video/mp4", "video/webm", "video/quicktime", "video/ogg"],
+          allowedContentTypes: [
+            "video/mp4",
+            "video/webm",
+            "video/quicktime",
+            "video/ogg",
+            "video/3gpp",
+            "video/3gpp2",
+          ],
           maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB
           addRandomSuffix: true,
         };

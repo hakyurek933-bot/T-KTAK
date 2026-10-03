@@ -17,6 +17,7 @@ export default async function LivePage() {
   let live: {
     id: string;
     title: string;
+    likeCount: number;
     startedAt: Date;
     author: {
       id: string;
@@ -105,7 +106,7 @@ export default async function LivePage() {
                   </p>
                 </div>
                 <span className="shrink-0 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white">
-                  CANLI · {room._count.viewers}
+                  CANLI · {room._count.viewers} · ❤️ {room.likeCount}
                 </span>
               </Link>
             </li>

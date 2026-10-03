@@ -5,10 +5,16 @@ import {
   endLiveAction,
   getLiveSnapshot,
   sendLiveMessageAction,
+  type LiveGiftView,
   type LiveSnapshot,
 } from "@/actions/live";
+import { findGift } from "@/lib/coins";
 import { RoleTag } from "@/components/RoleTag";
 import type { Role } from "@prisma/client";
+
+type FeedItem =
+  | { kind: "msg"; id: string; createdAt: string }
+  | { kind: "gift"; id: string; createdAt: string };
 
 export function LiveChat({
   roomId,
@@ -28,7 +34,7 @@ export function LiveChat({
   const [ending, setEnding] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // 3 saniyede bir anlık görüntü (mesajlar + izleyici + durum).
+  // 3 saniyede bir anlık görüntü (mesajlar + hediyeler + izleyici + durum).
   useEffect(() => {
     if (snapshot.status !== "LIVE") return;
     let active = true;
@@ -46,9 +52,10 @@ export function LiveChat({
     };
   }, [roomId, snapshot.status]);
 
+  const feedLen = snapshot.messages.length + snapshot.gifts.length;
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [snapshot.messages.length]);
+  }, [feedLen]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -75,6 +82,38 @@ export function LiveChat({
   }
 
   const live = snapshot.status === "LIVE";
+  const giftById = new Map(snapshot.gifts.map((g) => [g.id, g]));
+
+  const feed: FeedItem[] = [
+    ...snapshot.messages.map((m) => ({
+      kind: "msg" as const,
+      id: m.id,
+      createdAt: m.createdAt,
+    })),
+    ...snapshot.gifts.map((g) => ({
+      kind: "gift" as const,
+      id: g.id,
+      createdAt: g.createdAt,
+    })),
+  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const shown = feed.slice(-80);
+
+  function renderGift(g: LiveGiftView) {
+    const catalog = findGift(g.gift);
+    return (
+      <div
+        key={`gift-${g.id}`}
+        className="rounded-xl border border-amber-400/30 bg-gradient-to-r from-amber-400/15 to-pink-500/15 px-3 py-2 text-sm"
+      >
+        <span className="text-lg">{catalog?.emoji ?? "🎁"}</span>{" "}
+        <span className="font-semibold">@{g.sender.username}</span>{" "}
+        <span className="font-bold text-amber-300">
+          {catalog?.name ?? "Hediye"} x{g.count}
+        </span>{" "}
+        <span className="text-xs text-muted">({g.cost}🪙)</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[60vh] flex-col overflow-hidden rounded-2xl border border-white/10 bg-panel md:h-[70vh]">
@@ -83,7 +122,7 @@ export function LiveChat({
           {live ? (
             <>
               <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
-              {snapshot.viewers} izliyor · {snapshot.messages.length} mesaj
+              {snapshot.viewers} izliyor · ❤️ {snapshot.likes}
             </>
           ) : (
             "Yayın sona erdi"
@@ -102,18 +141,26 @@ export function LiveChat({
       </div>
 
       <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
-        {snapshot.messages.length === 0 && (
+        {shown.length === 0 && (
           <p className="py-8 text-center text-sm text-muted">
             {live ? "Henüz mesaj yok. İlk mesajı sen yaz!" : "Bu yayında mesaj yok."}
           </p>
         )}
-        {snapshot.messages.map((m) => (
-          <div key={m.id} className="text-sm">
-            <span className="font-semibold">@{m.author.username}</span>{" "}
-            <RoleTag role={m.author.role as Role} />{" "}
-            <span className="break-words text-foreground/90">{m.body}</span>
-          </div>
-        ))}
+        {shown.map((item) => {
+          if (item.kind === "gift") {
+            const g = giftById.get(item.id);
+            return g ? renderGift(g) : null;
+          }
+          const m = snapshot.messages.find((x) => x.id === item.id);
+          if (!m) return null;
+          return (
+            <div key={m.id} className="text-sm">
+              <span className="font-semibold">@{m.author.username}</span>{" "}
+              <RoleTag role={m.author.role as Role} />{" "}
+              <span className="break-words text-foreground/90">{m.body}</span>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 

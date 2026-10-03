@@ -11,6 +11,7 @@ export async function TopNav() {
 
   let unread = 0;
   let liveCount = 0;
+  let coins: number | null = null;
   if (user) {
     try {
       [unread, liveCount] = await Promise.all([
@@ -22,6 +23,15 @@ export async function TopNav() {
     } catch {
       unread = 0;
       liveCount = 0;
+    }
+    try {
+      const account = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { coinBalance: true },
+      });
+      coins = account?.coinBalance ?? null;
+    } catch {
+      coins = null;
     }
   }
 
@@ -109,6 +119,15 @@ export async function TopNav() {
             <Link href={`/u/${user.username}`} title="Profil">
               <Avatar user={user} size={30} />
             </Link>
+            {coins !== null && (
+              <Link
+                href={`/u/${user.username}`}
+                title="Coin bakiyen"
+                className="hidden rounded-full bg-amber-400/10 px-2.5 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-400/30 hover:bg-amber-400/20 sm:block"
+              >
+                🪙 {coins}
+              </Link>
+            )}
             <LogoutButton />
           </>
         ) : (

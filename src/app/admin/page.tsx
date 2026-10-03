@@ -7,7 +7,9 @@ import { RoleTag } from "@/components/RoleTag";
 import { BanForm } from "@/components/admin/BanForm";
 import { UnbanButton } from "@/components/admin/UnbanButton";
 import { RoleSelect } from "@/components/admin/RoleSelect";
+import { CoinAdjustForm } from "@/components/admin/CoinAdjustForm";
 import { LOG_ACTION_LABELS } from "@/lib/log";
+import { COIN_REASON_LABELS, findGift } from "@/lib/coins";
 import { timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +23,7 @@ export default async function AdminPage() {
   const isFounder = me.role === "FOUNDER";
   const myId = me.id;
 
-  const [users, logs, stats] = await Promise.all([
+  const [users, logs, stats, coinData] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ banned: "desc" }, { createdAt: "desc" }],
       take: 100,
@@ -51,6 +53,41 @@ export default async function AdminPage() {
       prisma.user.count({ where: { banned: true } }),
       prisma.message.count(),
     ]),
+    // Coin verileri ayrı blok: tablolar henüz yoksa panel yine açılır.
+    (async () => {
+      try {
+        const [txs, gifts, liveCount, giftCount, coinsAgg, balances] =
+          await Promise.all([
+            prisma.coinTransaction.findMany({
+              orderBy: { createdAt: "desc" },
+              take: 20,
+              include: { user: { select: { username: true } } },
+            }),
+            prisma.liveGift.findMany({
+              orderBy: { createdAt: "desc" },
+              take: 20,
+              include: {
+                sender: { select: { username: true } },
+                room: { select: { title: true } },
+              },
+            }),
+            prisma.liveRoom.count({ where: { status: "LIVE" } }),
+            prisma.liveGift.count(),
+            prisma.user.aggregate({ _sum: { coinBalance: true } }),
+            prisma.user.findMany({ select: { id: true, coinBalance: true } }),
+          ]);
+        return {
+          txs,
+          gifts,
+          liveCount,
+          giftCount,
+          coinsTotal: coinsAgg._sum.coinBalance ?? 0,
+          balances: new Map(balances.map((b) => [b.id, b.coinBalance])),
+        };
+      } catch {
+        return null;
+      }
+    })(),
   ]);
 
   const [userCount, postCount, bannedCount, messageCount] = stats;
@@ -107,6 +144,9 @@ export default async function AdminPage() {
           { label: "Video", value: postCount },
           { label: "Banlı", value: bannedCount },
           { label: "Mesaj", value: messageCount },
+          { label: "Canlı yayın", value: coinData?.liveCount ?? "—" },
+          { label: "Hediye", value: coinData?.giftCount ?? "—" },
+          { label: "Dolaşımdaki coin", value: coinData?.coinsTotal ?? "—" },
         ].map((s) => (
           <div
             key={s.label}
@@ -130,6 +170,7 @@ export default async function AdminPage() {
                   <th className="px-4 py-2.5">Kullanıcı</th>
                   <th className="px-4 py-2.5">Rol</th>
                   <th className="px-4 py-2.5">Video</th>
+                  <th className="px-4 py-2.5">Coin</th>
                   <th className="px-4 py-2.5">Durum</th>
                   <th className="px-4 py-2.5 text-right">İşlem</th>
                 </tr>
@@ -162,6 +203,9 @@ export default async function AdminPage() {
                       </div>
                     </td>
                     <td className="px-4 py-2.5 text-muted">{u._count.posts}</td>
+                    <td className="px-4 py-2.5 font-semibold text-amber-300">
+                      {coinData ? `🪙 ${coinData.balances.get(u.id) ?? 0}` : "—"}
+                    </td>
                     <td className="px-4 py-2.5">
                       {u.banned ? (
                         <span className="text-xs text-red-400" title={u.bannedReason ?? ""}>
@@ -189,6 +233,74 @@ export default async function AdminPage() {
             </table>
           </div>
         </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+          Coin yönetimi
+        </h2>
+        {coinData ? (
+          <div className="flex flex-col gap-4">
+            <CoinAdjustForm />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-panel">
+                <p className="border-b border-white/10 px-4 py-2.5 text-sm font-semibold">
+                  Son coin hareketleri
+                </p>
+                <ul className="divide-y divide-white/5">
+                  {coinData.txs.length === 0 && (
+                    <li className="px-4 py-4 text-sm text-muted">Henüz hareket yok.</li>
+                  )}
+                  {coinData.txs.map((t) => (
+                    <li key={t.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                      <span
+                        className={`font-bold ${t.amount >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                      >
+                        {t.amount >= 0 ? "+" : ""}
+                        {t.amount}
+                      </span>
+                      <span className="text-foreground/90">@{t.user.username}</span>
+                      <span className="text-xs text-muted">
+                        {COIN_REASON_LABELS[t.reason] ?? t.reason}
+                      </span>
+                      <span className="ml-auto text-xs text-muted">
+                        {timeAgo(t.createdAt)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-panel">
+                <p className="border-b border-white/10 px-4 py-2.5 text-sm font-semibold">
+                  Son hediyeler
+                </p>
+                <ul className="divide-y divide-white/5">
+                  {coinData.gifts.length === 0 && (
+                    <li className="px-4 py-4 text-sm text-muted">Henüz hediye yok.</li>
+                  )}
+                  {coinData.gifts.map((g) => (
+                    <li key={g.id} className="flex items-center gap-2 px-4 py-2 text-sm">
+                      <span className="text-lg">{findGift(g.gift)?.emoji ?? "🎁"}</span>
+                      <span className="text-foreground/90">
+                        @{g.sender.username} → {g.room.title}
+                      </span>
+                      <span className="text-xs text-muted">
+                        x{g.count} ({g.cost}🪙)
+                      </span>
+                      <span className="ml-auto text-xs text-muted">
+                        {timeAgo(g.createdAt)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-white/10 bg-panel p-4 text-sm text-muted">
+            Coin altyapısı henüz hazır değil. Yakında aktif olacak.
+          </p>
+        )}
       </section>
 
       <section>

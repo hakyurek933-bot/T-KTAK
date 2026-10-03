@@ -11,6 +11,7 @@ import {
   getCurrentUser,
 } from "@/lib/auth";
 import { createLog } from "@/lib/log";
+import { SIGNUP_BONUS } from "@/lib/coins";
 import {
   checkVerificationCode,
   clearVerificationCodes,
@@ -80,6 +81,24 @@ export async function signupAction(
       role: "USER",
     },
   });
+
+  // Hoş geldin bonusu: coin altyapısı hazırsa ekle, değilse sessizce geç.
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { coinBalance: { increment: SIGNUP_BONUS } },
+    });
+    await prisma.coinTransaction.create({
+      data: {
+        userId: user.id,
+        amount: SIGNUP_BONUS,
+        reason: "SIGNUP_BONUS",
+        note: "Hoş geldin bonusu",
+      },
+    });
+  } catch {
+    /* coin sistemi henüz kurulu değilse üyelik yine açılır */
+  }
 
   await createLog({
     action: "SIGNUP",

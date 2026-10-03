@@ -39,8 +39,33 @@ async function main() {
       passwordHash,
       role: "FOUNDER",
       bio: "Taktik kurucusu.",
+      // Başlangıç kasası (sadece ilk kurulumda; tekrar deployda sıfırlanmaz).
+      coinBalance: 1000,
     },
   });
+  // Kurucu başlangıç kasası: yalnızca hiç coin hareketi yoksa (tek seferlik).
+  try {
+    const txCount = await prisma.coinTransaction.count({
+      where: { userId: founder.id },
+    });
+    if (txCount === 0) {
+      await prisma.user.update({
+        where: { id: founder.id },
+        data: { coinBalance: { increment: 1000 } },
+      });
+      await prisma.coinTransaction.create({
+        data: {
+          userId: founder.id,
+          amount: 1000,
+          reason: "ADMIN_ADJUST",
+          note: "Kurucu başlangıç kasası",
+        },
+      });
+      console.log("✓ Kurucu başlangıç kasası eklendi (1000 coin)");
+    }
+  } catch {
+    /* coin tablosu yoksa geç */
+  }
   console.log(`✓ Kurucu hazır: @${founder.username}`);
 
   // Kurucu tek kişi olsun: başka FOUNDER varsa üyeliğe düşür.
@@ -65,6 +90,7 @@ async function main() {
           passwordHash: await bcrypt.hash("uyem1234", 10),
           role: "USER",
           bio: "Merhaba, ben " + name + ".",
+          coinBalance: 200,
         },
       });
       members.push(u);

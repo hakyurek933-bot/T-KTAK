@@ -2,10 +2,14 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, isStaff } from "@/lib/auth";
+import { isSameDay } from "@/lib/coins";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { LiveChat } from "@/components/LiveChat";
+import { LiveLikeButton } from "@/components/LiveLikeButton";
+import { LiveGiftBar } from "@/components/LiveGiftBar";
+import { DailyBonusButton } from "@/components/DailyBonusButton";
 import { Caption } from "@/components/Caption";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +66,22 @@ export default async function LiveRoomPage({
   const { getLiveSnapshot } = await import("@/actions/live");
   const initial = await getLiveSnapshot(room.id);
 
+  // Coin bakiyesi ayrı sorgu: kolon henüz yoksa sayfa yine açılır.
+  let balance = 0;
+  let claimedToday = false;
+  try {
+    const account = await prisma.user.findUnique({
+      where: { id: me.id },
+      select: { coinBalance: true, lastDailyBonusAt: true },
+    });
+    balance = account?.coinBalance ?? 0;
+    claimedToday = !!(
+      account?.lastDailyBonusAt && isSameDay(account.lastDailyBonusAt, new Date())
+    );
+  } catch {
+    /* coin sistemi hazır değilse 0 görünür */
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-3 py-4">
       <Link
@@ -89,6 +109,9 @@ export default async function LiveRoomPage({
             )}
           </p>
         </div>
+        {initial && room.status === "LIVE" && (
+          <LiveLikeButton roomId={room.id} initialLikes={initial.likes} />
+        )}
       </div>
 
       <div className="aspect-[9/16] w-full overflow-hidden rounded-2xl bg-black sm:max-h-[60vh]">
@@ -98,6 +121,13 @@ export default async function LiveRoomPage({
       <div className="mt-3">
         <Caption text={room.title} className="text-sm text-white/90" />
       </div>
+
+      {room.status === "LIVE" && (
+        <div className="mt-3 flex flex-col gap-3">
+          <DailyBonusButton claimedToday={claimedToday} balance={balance} />
+          <LiveGiftBar roomId={room.id} balance={initial?.balance ?? balance} />
+        </div>
+      )}
 
       <div className="mt-3">
         {initial ? (

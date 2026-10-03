@@ -53,7 +53,9 @@ export function UploadForm() {
             ? ".mov"
             : file.type === "video/ogg"
               ? ".ogv"
-              : "";
+              : file.type === "video/3gpp" || file.type === "video/3gpp2"
+                ? ".3gp"
+                : "";
     const ext = (nameExt || typeExt || ".mp4").replace(/[^a-z0-9.]/g, "").slice(0, 5);
     const random = Math.random().toString(36).slice(2, 10);
     return `videos/${Date.now()}-${random}${ext.startsWith(".") ? ext : `.${ext}`}`;
@@ -121,7 +123,7 @@ export function UploadForm() {
           ) : (
             <>
               <p className="text-sm text-muted">
-                Video dosyanı seç (mp4/webm, en fazla 50 MB)
+                Video dosyanı seç (mp4 / 3gp / webm, en fazla 50 MB)
               </p>
               <button
                 type="button"

@@ -7,6 +7,7 @@ import { RoleTag } from "@/components/RoleTag";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { PlayIcon, HeartIcon, GridIcon, LockIcon } from "@/components/icons";
+import { DailyBonusButton } from "@/components/DailyBonusButton";
 import { formatCount } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,25 @@ export default async function ProfilePage({
   if (!user) notFound();
 
   const isMe = me?.id === user.id;
+
+  // Coin bilgisi ayrı sorgu: kolon henüz yoksa profil yine açılır.
+  let coinBalance = 0;
+  let claimedToday = false;
+  if (isMe) {
+    try {
+      const account = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { coinBalance: true, lastDailyBonusAt: true },
+      });
+      coinBalance = account?.coinBalance ?? 0;
+      claimedToday = !!(
+        account?.lastDailyBonusAt &&
+        account.lastDailyBonusAt.toDateString() === new Date().toDateString()
+      );
+    } catch {
+      /* coin sistemi hazır değilse 0 görünür */
+    }
+  }
 
   const [isFollowing, posts, likedPosts] = await Promise.all([
     me
@@ -106,6 +126,10 @@ export default async function ProfilePage({
           <Stat label="Takipçi" value={user._count.followers} href={`/u/${user.username}/followers`} />
           <Stat label="Beğeni" value={likedPosts.length} />
         </div>
+
+        {isMe && (
+          <DailyBonusButton claimedToday={claimedToday} balance={coinBalance} />
+        )}
 
         <div className="flex flex-wrap justify-center gap-2">
           {isMe ? (
