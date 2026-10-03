@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import {
   addCommentAction,
   deleteCommentAction,
+  pinCommentAction,
   toggleCommentLikeAction,
 } from "@/actions/comments";
 import { Avatar } from "@/components/Avatar";
@@ -16,6 +17,7 @@ import type { Role } from "@prisma/client";
 export type CommentNode = {
   id: string;
   body: string;
+  pinned?: boolean;
   createdAt: Date | string;
   author: { username: string; displayName: string; avatarUrl: string | null; role: Role };
   likes: { userId: string }[];
@@ -30,6 +32,7 @@ export function CommentSheet({
   comments,
   canComment,
   canModerate,
+  canPin = false,
   currentUserId,
   onCommentAdded,
 }: {
@@ -39,11 +42,13 @@ export function CommentSheet({
   comments: CommentNode[];
   canComment: boolean;
   canModerate: boolean;
+  canPin?: boolean;
   currentUserId?: string;
   onCommentAdded?: () => void;
 }) {
   const [state, action, pending] = useActionState(addCommentAction, null);
   const [replyTo, setReplyTo] = useState<CommentNode | null>(null);
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const wasPending = useRef(false);
 
   useEffect(() => {
@@ -57,6 +62,20 @@ export function CommentSheet({
   if (!open) return null;
 
   const total = comments.reduce((acc, c) => acc + 1 + (c.replies?.length ?? 0), 0);
+  const isPinned = (c: CommentNode) =>
+    pinnedId !== null ? c.id === pinnedId : !!c.pinned;
+  const sorted = [...comments].sort(
+    (a, b) => Number(isPinned(b)) - Number(isPinned(a))
+  );
+
+  async function handlePin(id: string) {
+    try {
+      const res = await pinCommentAction(id);
+      if (!res.error) setPinnedId(res.pinned ? id : null);
+    } catch {
+      /* sessizce yoksay */
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-40 flex items-end" role="dialog" aria-modal="true">
@@ -86,12 +105,15 @@ export function CommentSheet({
               Henüz yorum yok. İlk yorumu sen yap!
             </li>
           )}
-          {comments.map((c) => (
+          {sorted.map((c) => (
             <CommentRow
               key={c.id}
               comment={c}
               currentUserId={currentUserId}
               canModerate={canModerate}
+              canPin={canPin}
+              pinned={isPinned(c)}
+              onPin={() => handlePin(c.id)}
               onReply={() => setReplyTo(c)}
             />
           ))}
@@ -148,11 +170,17 @@ function CommentRow({
   comment,
   currentUserId,
   canModerate,
+  canPin,
+  pinned,
+  onPin,
   onReply,
 }: {
   comment: CommentNode;
   currentUserId?: string;
   canModerate: boolean;
+  canPin: boolean;
+  pinned: boolean;
+  onPin: () => void;
   onReply: () => void;
 }) {
   const [liked, setLiked] = useState(
@@ -185,9 +213,27 @@ function CommentRow({
       <Avatar user={comment.author} size={36} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
+          {pinned && (
+            <span
+              className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-bold text-amber-300"
+              title="Video sahibi bu yorumu sabitledi"
+            >
+              📌 Sabitli
+            </span>
+          )}
           <span className="text-sm font-semibold">@{comment.author.username}</span>
           <RoleTag role={comment.author.role} />
           <span className="text-xs text-muted">{timeAgo(comment.createdAt)}</span>
+          {canPin && (
+            <button
+              type="button"
+              onClick={onPin}
+              title={pinned ? "Sabiti kaldır" : "Yorumu sabitle"}
+              className={`text-xs hover:text-amber-300 ${pinned ? "text-amber-300" : "text-muted"}`}
+            >
+              📌
+            </button>
+          )}
           {canModerate && (
             <form action={deleteCommentAction.bind(null, comment.id)} className="ml-auto">
               <button className="text-xs text-muted hover:text-red-400">Sil</button>

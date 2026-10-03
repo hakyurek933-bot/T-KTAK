@@ -101,6 +101,42 @@ export async function toggleCommentLikeAction(commentId: string) {
   return { liked: !existing, count };
 }
 
+/** Yorumu sabitle / sabiti kaldır: yalnızca video sahibi, gönderi başına tek sabit. */
+export async function pinCommentAction(
+  commentId: string
+): Promise<{ error?: string; pinned?: boolean }> {
+  const user = await requireUser();
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+    select: { id: true, postId: true, parentId: true, pinned: true, post: { select: { authorId: true } } },
+  });
+  if (!comment || comment.parentId) return { error: "Yorum bulunamadı" };
+  if (comment.post.authorId !== user.id) {
+    return { error: "Yalnızca video sahibi sabitleyebilir" };
+  }
+
+  if (comment.pinned) {
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: { pinned: false },
+    });
+    revalidatePath("/");
+    return { pinned: false };
+  }
+
+  await prisma.$transaction([
+    prisma.comment.updateMany({
+      where: { postId: comment.postId, pinned: true },
+      data: { pinned: false },
+    }),
+    prisma.comment.update({ where: { id: commentId }, data: { pinned: true } }),
+  ]);
+
+  revalidatePath("/");
+  return { pinned: true };
+}
+
 /** Yorum silme: yorum sahibi, video sahibi veya yönetici ekibi silebilir. */
 export async function deleteCommentAction(commentId: string) {
   const user = await requireUser();

@@ -55,11 +55,38 @@ export default async function HomePage({
       ).map((f) => f.followingId)
     : [];
 
+  // Engelliler birbirinin akışında görünmez (tablo yoksa filtre yok).
+  let hiddenAuthors: string[] = [];
+  if (user) {
+    try {
+      const [iBlocked, blockedMe] = await Promise.all([
+        prisma.block.findMany({
+          where: { blockerId: user.id },
+          select: { blockedId: true },
+        }),
+        prisma.block.findMany({
+          where: { blockedId: user.id },
+          select: { blockerId: true },
+        }),
+      ]);
+      hiddenAuthors = [
+        ...iBlocked.map((b) => b.blockedId),
+        ...blockedMe.map((b) => b.blockerId),
+      ];
+    } catch {
+      hiddenAuthors = [];
+    }
+  }
+
+  const authorFilter =
+    tab === "following"
+      ? { in: followingIds, ...(hiddenAuthors.length ? { notIn: hiddenAuthors } : {}) }
+      : hiddenAuthors.length
+        ? { notIn: hiddenAuthors }
+        : undefined;
+
   const posts = await prisma.post.findMany({
-    where:
-      tab === "following"
-        ? { authorId: { in: followingIds } }
-        : undefined,
+    where: authorFilter ? { authorId: authorFilter } : undefined,
     orderBy: { createdAt: "desc" },
     take: 30,
     include: postInclude,

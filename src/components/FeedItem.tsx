@@ -301,6 +301,7 @@ export function FeedItem({
         comments={post.comments}
         canComment={!!currentUserId}
         canModerate={canModerate}
+        canPin={currentUserId === post.author.id}
         currentUserId={currentUserId}
         onCommentAdded={() => setCommentCount((c) => c + 1)}
       />

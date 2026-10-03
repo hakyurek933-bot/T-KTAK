@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { FollowButton } from "@/components/FollowButton";
 import { ShareProfileButton } from "@/components/ShareProfileButton";
+import { BlockButton } from "@/components/BlockButton";
 import { ReportButton } from "@/components/ReportButton";
 import { PlayIcon, HeartIcon, GridIcon, LockIcon } from "@/components/icons";
 import { VideoThumb } from "@/components/VideoThumb";
@@ -47,18 +48,20 @@ export default async function ProfilePage({
 
   const isMe = me?.id === user.id;
 
-  // Coin + aktivite bilgisi ayrı sorgular: kolonlar henüz yoksa profil yine açılır.
+  // Coin + kapak bilgisi ayrı sorgu: kolonlar henüz yoksa profil yine açılır.
   let coinBalance = 0;
   let claimedToday = false;
   let likesReceived = 0;
   let liveCount = 0;
   let giftsSent = 0;
+  let coverUrl: string | null = null;
   try {
     const account = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { coinBalance: true, lastDailyBonusAt: true },
+      select: { coinBalance: true, lastDailyBonusAt: true, coverUrl: true },
     });
     coinBalance = account?.coinBalance ?? 0;
+    coverUrl = account?.coverUrl ?? null;
     claimedToday =
       isMe &&
       !!(
@@ -76,6 +79,28 @@ export default async function ProfilePage({
     ]);
   } catch {
     /* canlı/coin tabloları hazır değilse rozetler kısmi görünür */
+  }
+
+  // Engel durumları (tablo yoksa etkileşim açık varsayılır).
+  let blockedByMe = false;
+  let blockedMe = false;
+  if (me && !isMe) {
+    try {
+      const [a, b] = await Promise.all([
+        prisma.block.findUnique({
+          where: { blockerId_blockedId: { blockerId: me.id, blockedId: user.id } },
+          select: { id: true },
+        }),
+        prisma.block.findUnique({
+          where: { blockerId_blockedId: { blockerId: user.id, blockedId: me.id } },
+          select: { id: true },
+        }),
+      ]);
+      blockedByMe = !!a;
+      blockedMe = !!b;
+    } catch {
+      /* engel tablosu hazır değilse açık varsay */
+    }
   }
 
   const [isFollowing, posts, likedPosts] = await Promise.all([
@@ -119,6 +144,12 @@ export default async function ProfilePage({
     <div className="mx-auto w-full max-w-2xl px-3 py-5">
       {/* Üst profil kartı */}
       <div className="flex flex-col items-center gap-3 py-4">
+        {coverUrl && (
+          <div className="h-36 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-brand/40 via-brand-2/30 to-brand/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+        )}
         <Avatar user={user} size={96} />
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-bold">@{user.username}</h1>
@@ -186,19 +217,38 @@ export default async function ProfilePage({
               </Link>
             </>
           ) : (
-            me && (
+            me && !blockedMe && (
               <>
-                <FollowButton targetId={user.id} initialFollowing={!!isFollowing} size="lg" />
-                <Link
-                  href={`/messages/${user.username}`}
-                  className="rounded-full border border-white/20 px-6 py-2.5 text-sm font-semibold hover:border-white/40"
-                >
-                  Mesaj
-                </Link>
-                <ShareProfileButton username={user.username} />
-                <ReportButton target="USER" targetId={user.id} />
+                {!blockedByMe && (
+                  <>
+                    <FollowButton targetId={user.id} initialFollowing={!!isFollowing} size="lg" />
+                    <Link
+                      href={`/messages/${user.username}`}
+                      className="rounded-full border border-white/20 px-6 py-2.5 text-sm font-semibold hover:border-white/40"
+                    >
+                      Mesaj
+                    </Link>
+                    <ShareProfileButton username={user.username} />
+                    <ReportButton target="USER" targetId={user.id} />
+                  </>
+                )}
+                {blockedByMe && (
+                  <p className="text-xs text-muted">
+                    Bu kullanıcıyı engelledin. Videolarını görmüyorsun.
+                  </p>
+                )}
+                <BlockButton
+                  targetId={user.id}
+                  targetUsername={user.username}
+                  initialBlocked={blockedByMe}
+                />
               </>
             )
+          )}
+          {me && blockedMe && !isMe && (
+            <p className="text-xs text-muted">
+              Bu kullanıcı seni engellemiş.
+            </p>
           )}
         </div>
 

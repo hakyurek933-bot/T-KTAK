@@ -73,6 +73,36 @@ export async function createPostAction(
   redirect("/");
 }
 
+/** Video açıklamasını düzenler: yalnızca sahibi. Bozkurt filtresi uygulanır. */
+export async function editCaptionAction(
+  postId: string,
+  caption: string
+): Promise<{ error?: string; ok?: boolean }> {
+  const user = await requireUser();
+
+  const text = caption.trim().slice(0, 300);
+  if (containsProfanity(text)) return { error: PROFANITY_ERROR };
+
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { authorId: true },
+  });
+  if (!post || post.authorId !== user.id) {
+    return { error: "Yalnızca kendi videonu düzenleyebilirsin" };
+  }
+
+  await prisma.post.update({
+    where: { id: postId },
+    data: { caption: text || null },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/studio");
+  revalidatePath("/discover");
+  revalidatePath(`/u/${user.username}`);
+  return { ok: true };
+}
+
 export async function deletePostAction(postId: string) {
   const user = await requireUser();
   const post = await prisma.post.findUnique({ where: { id: postId } });

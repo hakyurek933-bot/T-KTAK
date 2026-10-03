@@ -45,6 +45,12 @@ export async function sendMessageAction(input: {
   if (!receiver) return { error: "Kullanıcı bulunamadı" };
   if (receiver.banned) return { error: "Bu kullanıcı askıya alınmış" };
 
+  // Engelliler arası mesaj yok.
+  const { isBlockedEitherWay } = await import("@/actions/blocks");
+  if (await isBlockedEitherWay(user.id, receiver.id)) {
+    return { error: "Bu kullanıcıyla mesajlaşamazsın" };
+  }
+
   await prisma.message.create({
     data: {
       senderId: user.id,

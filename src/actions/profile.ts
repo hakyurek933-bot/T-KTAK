@@ -13,6 +13,9 @@ const profileSchema = z.object({
   avatarUrl: z
     .union([z.string().url("Geçerli bir fotoğraf bağlantısı girin"), z.literal("")])
     .optional(),
+  coverUrl: z
+    .union([z.string().url("Geçerli bir fotoğraf bağlantısı girin"), z.literal("")])
+    .optional(),
   birthdate: z
     .union([
       z
@@ -37,6 +40,7 @@ export async function updateProfileAction(
     displayName: String(formData.get("displayName") || ""),
     bio: String(formData.get("bio") || "").trim() || undefined,
     avatarUrl: String(formData.get("avatarUrl") || "").trim() || undefined,
+    coverUrl: String(formData.get("coverUrl") || "").trim() || undefined,
     birthdate: String(formData.get("birthdate") || "").trim() || undefined,
   });
   if (!parsed.success) {
@@ -49,6 +53,7 @@ export async function updateProfileAction(
       displayName: parsed.data.displayName,
       bio: parsed.data.bio ?? null,
       avatarUrl: parsed.data.avatarUrl || null,
+      coverUrl: parsed.data.coverUrl || null,
       ...(parsed.data.birthdate
         ? { birthdate: new Date(`${parsed.data.birthdate}T00:00:00`) }
         : {}),

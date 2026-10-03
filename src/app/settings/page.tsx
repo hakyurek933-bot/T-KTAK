@@ -6,6 +6,7 @@ import {
   ProfileSettingsForm,
   PasswordForm,
 } from "@/components/ProfileSettingsForm";
+import { BlockedList } from "@/components/BlockedList";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Ayarlar — Taktik" };
@@ -15,14 +16,16 @@ export default async function SettingsPage() {
   if (!me) redirect("/login");
 
   let birthdate = "";
+  let coverUrl = "";
   try {
     const account = await prisma.user.findUnique({
       where: { id: me.id },
-      select: { birthdate: true },
+      select: { birthdate: true, coverUrl: true },
     });
     if (account?.birthdate) {
       birthdate = account.birthdate.toISOString().slice(0, 10);
     }
+    coverUrl = account?.coverUrl ?? "";
   } catch {
     /* kolon henüz yoksa boş geç */
   }
@@ -42,9 +45,11 @@ export default async function SettingsPage() {
           displayName={me.displayName}
           bio={me.bio ?? ""}
           avatarUrl={me.avatarUrl ?? ""}
+          coverUrl={coverUrl}
           birthdate={birthdate}
         />
         <PasswordForm />
+        <BlockedList />
 
         <div className="rounded-2xl border border-white/10 bg-panel p-4 text-sm">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">

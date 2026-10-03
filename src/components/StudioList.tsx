@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { deletePostAction } from "@/actions/posts";
+import { deletePostAction, editCaptionAction } from "@/actions/posts";
 import { promotePostAction } from "@/actions/coins";
 import { PROMOTE_COST } from "@/lib/coins";
 import { probeUrlPlayable } from "@/lib/video-probe";
@@ -27,6 +27,9 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
   const [items, setItems] = useState(posts);
   const [promoBusy, setPromoBusy] = useState<string | null>(null);
   const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<Record<string, Status>>(() =>
     Object.fromEntries(posts.map((p) => [p.id, "check" as Status]))
   );
@@ -86,6 +89,24 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
   }
 
   const badCount = items.filter((p) => status[p.id] === "bad").length;
+
+  async function handleSaveCaption(id: string) {
+    setSaving(true);
+    try {
+      const res = await editCaptionAction(id, draft);
+      if (res.error) {
+        setPromoMsg(res.error);
+      } else {
+        setItems((list) =>
+          list.map((p) => (p.id === id ? { ...p, caption: draft.trim() || null } : p))
+        );
+        setEditingId(null);
+        setPromoMsg("Açıklama güncellendi ✓");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handlePromote(id: string) {
     if (
@@ -161,9 +182,51 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
               <VideoThumb src={p.videoUrl} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
-                {p.caption || "Başlıksız video"}
-              </p>
+              {editingId === p.id ? (
+                <div className="flex flex-col gap-1.5">
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    maxLength={300}
+                    rows={2}
+                    className="w-full resize-none rounded-xl border border-white/10 bg-panel-2 px-3 py-2 text-sm outline-none focus:border-brand"
+                  />
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveCaption(p.id)}
+                      disabled={saving}
+                      className="rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                    >
+                      {saving ? "..." : "Kaydet"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="rounded-full border border-white/15 px-3 py-1 text-xs text-muted hover:text-white"
+                    >
+                      Vazgeç
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="truncate text-sm font-medium">
+                    {p.caption || "Başlıksız video"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(p.id);
+                      setDraft(p.caption ?? "");
+                      setPromoMsg(null);
+                    }}
+                    className="mt-0.5 text-[11px] text-muted hover:text-white"
+                  >
+                    ✏️ Açıklamayı düzenle
+                  </button>
+                </>
+              )}
               <p className="mt-0.5 text-xs text-muted">
                 {timeAgo(p.createdAt)} · 👁 {formatCount(p.viewCount)} · ❤️{" "}
                 {formatCount(p.likes)} · 💬 {formatCount(p.comments)}

@@ -216,6 +216,7 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
   let room: {
     status: string;
     likeCount: number;
+    authorId: string;
     messages: {
       id: string;
       body: string;
@@ -237,6 +238,7 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
       select: {
         status: true,
         likeCount: true,
+        authorId: true,
         messages: {
           orderBy: { createdAt: "desc" },
           take: 60,
@@ -283,11 +285,14 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
         select: { id: true },
       });
       if (!seen) {
-        await prisma.liveMessage
-          .create({
-            data: { roomId, authorId: user.id, body: LIVE_JOIN_TEXT },
-          })
-          .catch(() => {});
+        // Yayıncı kendine katılma mesajı bırakmaz.
+        if (user.id !== room.authorId) {
+          await prisma.liveMessage
+            .create({
+              data: { roomId, authorId: user.id, body: LIVE_JOIN_TEXT },
+            })
+            .catch(() => {});
+        }
       }
       await prisma.liveViewer.upsert({
         where: { roomId_userId: { roomId, userId: user.id } },

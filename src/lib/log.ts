@@ -43,6 +43,8 @@ export const LOG_ACTION_LABELS: Record<LogAction, string> = {
   STORY_DELETE: "Hikaye sildi",
   REPORT_CREATE: "Şikayet etti",
   REPORT_REVIEW: "Şikayeti inceledi",
+  BLOCK: "Engelledi",
+  UNBLOCK: "Engeli kaldırdı",
   MESSAGE_SEND: "Mesaj gönderdi",
   BAN: "Banladı",
   UNBAN: "Banı kaldırdı",

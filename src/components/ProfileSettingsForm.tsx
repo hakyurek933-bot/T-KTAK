@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateProfileAction, changePasswordAction } from "@/actions/profile";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { CoverUpload } from "@/components/CoverUpload";
 
 type ProfileState = { error?: string; success?: string } | null;
 
@@ -11,12 +12,14 @@ export function ProfileSettingsForm({
   displayName,
   bio,
   avatarUrl,
+  coverUrl,
   birthdate,
 }: {
   username: string;
   displayName: string;
   bio: string;
   avatarUrl: string;
+  coverUrl: string;
   birthdate: string;
 }) {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
@@ -69,6 +72,11 @@ export function ProfileSettingsForm({
           displayName={displayName}
           initialUrl={avatarUrl}
         />
+      </div>
+
+      <div className="flex flex-col gap-1.5 text-sm">
+        <span className="text-muted">Kapak fotoğrafı</span>
+        <CoverUpload initialUrl={coverUrl} />
       </div>
 
       <label className="flex flex-col gap-1.5 text-sm">
