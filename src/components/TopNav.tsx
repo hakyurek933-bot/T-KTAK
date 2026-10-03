@@ -10,10 +10,19 @@ export async function TopNav() {
   const user = await getCurrentUser();
 
   let unread = 0;
+  let liveCount = 0;
   if (user) {
-    unread = await prisma.notification.count({
-      where: { userId: user.id, read: false },
-    });
+    try {
+      [unread, liveCount] = await Promise.all([
+        prisma.notification.count({
+          where: { userId: user.id, read: false },
+        }),
+        prisma.liveRoom.count({ where: { status: "LIVE" } }),
+      ]);
+    } catch {
+      unread = 0;
+      liveCount = 0;
+    }
   }
 
   return (
@@ -31,6 +40,17 @@ export async function TopNav() {
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
         <Link
+          href="/live"
+          title="Canlı yayınlar"
+          className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-500/20"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="absolute h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+          </span>
+          CANLI{liveCount > 0 ? ` · ${liveCount}` : ""}
+        </Link>
+        <Link
           href="/search"
           title="Ara"
           className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-white/10 hover:text-white md:hidden"
@@ -46,7 +66,7 @@ export async function TopNav() {
             <Link
               href="/saved"
               title="Kaydedilenler"
-              className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-white/10 hover:text-white"
+              className="hidden h-9 w-9 place-items-center rounded-full text-muted hover:bg-white/10 hover:text-white sm:grid"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
                 <path d="M6 3h12v18l-6-5-6 5z" />
@@ -81,7 +101,7 @@ export async function TopNav() {
             <Link
               href="/settings"
               title="Ayarlar"
-              className="grid h-9 w-9 place-items-center rounded-full text-muted hover:bg-white/10 hover:text-white"
+              className="hidden h-9 w-9 place-items-center rounded-full text-muted hover:bg-white/10 hover:text-white sm:grid"
             >
               <SettingsIcon size={20} />
             </Link>

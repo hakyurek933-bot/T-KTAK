@@ -11,11 +11,13 @@ export function ProfileSettingsForm({
   displayName,
   bio,
   avatarUrl,
+  birthdate,
 }: {
   username: string;
   displayName: string;
   bio: string;
   avatarUrl: string;
+  birthdate: string;
 }) {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
     updateProfileAction,
@@ -68,6 +70,17 @@ export function ProfileSettingsForm({
           initialUrl={avatarUrl}
         />
       </div>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="text-muted">Doğum tarihi (canlı yayın için gerekli)</span>
+        <input
+          name="birthdate"
+          type="date"
+          defaultValue={birthdate}
+          max={new Date().toISOString().slice(0, 10)}
+          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
+        />
+      </label>
 
       <button
         disabled={pending}

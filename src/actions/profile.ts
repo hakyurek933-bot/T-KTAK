@@ -13,6 +13,18 @@ const profileSchema = z.object({
   avatarUrl: z
     .union([z.string().url("Geçerli bir fotoğraf bağlantısı girin"), z.literal("")])
     .optional(),
+  birthdate: z
+    .union([
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Tarih YYYY-AA-GG olmalı")
+        .refine((s) => {
+          const d = new Date(`${s}T00:00:00`);
+          return !Number.isNaN(d.getTime()) && d.getTime() <= Date.now();
+        }, "Geçerli bir doğum tarihi girin"),
+      z.literal(""),
+    ])
+    .optional(),
 });
 
 export async function updateProfileAction(
@@ -25,6 +37,7 @@ export async function updateProfileAction(
     displayName: String(formData.get("displayName") || ""),
     bio: String(formData.get("bio") || "").trim() || undefined,
     avatarUrl: String(formData.get("avatarUrl") || "").trim() || undefined,
+    birthdate: String(formData.get("birthdate") || "").trim() || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgi" };
@@ -36,6 +49,9 @@ export async function updateProfileAction(
       displayName: parsed.data.displayName,
       bio: parsed.data.bio ?? null,
       avatarUrl: parsed.data.avatarUrl || null,
+      ...(parsed.data.birthdate
+        ? { birthdate: new Date(`${parsed.data.birthdate}T00:00:00`) }
+        : {}),
     },
   });
 

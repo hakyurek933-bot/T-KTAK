@@ -92,6 +92,14 @@ export default async function ProfilePage({
         {user.bio && (
           <p className="max-w-md text-center text-sm text-muted">{user.bio}</p>
         )}
+        {isMe && !user.avatarUrl && (
+          <Link
+            href="/settings"
+            className="rounded-full bg-brand/15 px-4 py-1.5 text-xs font-semibold text-brand-2 ring-1 ring-brand/30 hover:bg-brand/25"
+          >
+            📷 Profil fotoğrafı ekle — seni daha çok kişi takip eder
+          </Link>
+        )}
 
         <div className="flex items-center gap-8 py-1 text-center">
           <Stat label="Takip" value={user._count.following} href={`/u/${user.username}/following`} />
@@ -107,6 +115,12 @@ export default async function ProfilePage({
                 className="rounded-full border border-white/20 px-6 py-2.5 text-sm font-semibold hover:border-white/40"
               >
                 Profili düzenle
+              </Link>
+              <Link
+                href="/saved"
+                className="rounded-full border border-white/20 px-6 py-2.5 text-sm font-semibold hover:border-white/40"
+              >
+                🔖 Kaydedilenler
               </Link>
               <ShareProfileButton username={user.username} />
               <Link

@@ -26,10 +26,17 @@ enum LogAction {
   COMMENT_CREATE
   COMMENT_DELETE
   EMAIL_VERIFY
+  LIVE_START
+  LIVE_END
   MESSAGE_SEND
   BAN
   UNBAN
   ROLE_CHANGE
+}
+
+enum LiveStatus {
+  LIVE
+  ENDED
 }
 
 enum NotificationType {
@@ -47,6 +54,7 @@ model User {
   email        String?  @unique
   emailVerified Boolean @default(false)
   googleId     String?  @unique
+  birthdate    DateTime?
   passwordHash String
   role         Role     @default(USER)
   bio          String?
@@ -73,6 +81,11 @@ model User {
   // Bildirimler
   notifications     Notification[] @relation("ReceivedNotifications")
   sentNotifications Notification[] @relation("SentNotifications")
+
+  // Canlı yayınlar
+  liveRooms    LiveRoom[]    @relation("LiveAuthor")
+  liveMessages LiveMessage[]
+  liveViewers  LiveViewer[]
 }
 
 model Post {
@@ -203,6 +216,50 @@ model Log {
   target User? @relation("TargetLogs", fields: [targetId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+// Canlı yayın odası. Yayıncının seçtiği video izleyicilere oynatılır,
+// sohbet canlı akar. Yayın açmak için 15 yaş ve üzeri gerekir.
+model LiveRoom {
+  id        String     @id @default(cuid())
+  authorId  String
+  title     String
+  videoUrl  String
+  status    LiveStatus @default(LIVE)
+  startedAt DateTime   @default(now())
+  endedAt   DateTime?
+
+  author   User          @relation("LiveAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  messages LiveMessage[]
+  viewers  LiveViewer[]
+
+  @@index([status, startedAt])
+}
+
+model LiveMessage {
+  id        String   @id @default(cuid())
+  roomId    String
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  room   LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  author User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+}
+
+model LiveViewer {
+  id       String   @id @default(cuid())
+  roomId   String
+  userId   String
+  lastSeen DateTime @default(now())
+
+  room LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId, lastSeen])
 }
 
 // E-posta doğrulama kodları (6 haneli, 15 dakika geçerli).

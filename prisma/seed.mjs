@@ -34,6 +34,8 @@ async function main() {
       displayName: process.env.FOUNDER_DISPLAY_NAME || "Kurucu",
       email: process.env.FOUNDER_EMAIL?.toLowerCase() || null,
       emailVerified: true,
+      // Yayın açabilmen için varsayılan doğum tarihi (Ayarlar'dan değiştirebilirsin).
+      birthdate: new Date("1990-01-01T00:00:00"),
       passwordHash,
       role: "FOUNDER",
       bio: "Taktik kurucusu.",

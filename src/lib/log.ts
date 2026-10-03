@@ -34,6 +34,8 @@ export const LOG_ACTION_LABELS: Record<LogAction, string> = {
   COMMENT_CREATE: "Yorum yaptı",
   COMMENT_DELETE: "Yorum sildi",
   EMAIL_VERIFY: "E-postayı doğruladı",
+  LIVE_START: "Canlı yayın açtı",
+  LIVE_END: "Canlı yayını bitirdi",
   MESSAGE_SEND: "Mesaj gönderdi",
   BAN: "Banladı",
   UNBAN: "Banı kaldırdı",

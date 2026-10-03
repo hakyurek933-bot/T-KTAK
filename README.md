@@ -30,6 +30,8 @@ Yerli TikTok — kısa video paylaşımı + mesajlaşma platformu. **Kurucu tag'
 | ★ Kurucu tag | Altın renkli "KURUCU" rozeti; **tek kurucu sensin** |
 | 🚫 Ban paneli | Banla / banı kaldır, sebep gir; yetki hiyerarşisi |
 | 📜 Log paneli | Kayıt, giriş, video, yorum, mesaj, ban, rol değişimi |
+| 🔴 Canlı yayın | Yayın odası + canlı sohbet + izleyici sayacı (açmak için 15+ yaş) |
+| 👤 Profil sistemi | Avatar yükleme, bio, takip/takipçi/beğeni sayaçları, Videolar/Beğeniler sekmeleri, profil paylaşma |
 | 👑 Roller | FOUNDER (kurucu), MOD (moderatör), USER (üye) |
 
 ## Vercel'e deploy (adım adım)

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import {
   ProfileSettingsForm,
@@ -12,6 +13,19 @@ export const metadata = { title: "Ayarlar — Taktik" };
 export default async function SettingsPage() {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
+
+  let birthdate = "";
+  try {
+    const account = await prisma.user.findUnique({
+      where: { id: me.id },
+      select: { birthdate: true },
+    });
+    if (account?.birthdate) {
+      birthdate = account.birthdate.toISOString().slice(0, 10);
+    }
+  } catch {
+    /* kolon henüz yoksa boş geç */
+  }
 
   return (
     <div className="mx-auto w-full max-w-lg px-3 py-5">
@@ -28,6 +42,7 @@ export default async function SettingsPage() {
           displayName={me.displayName}
           bio={me.bio ?? ""}
           avatarUrl={me.avatarUrl ?? ""}
+          birthdate={birthdate}
         />
         <PasswordForm />
 
