@@ -253,6 +253,8 @@ model Message {
   senderId   String
   receiverId String
   body       String
+  // Tür: text (yazı), sticker (büyük emoji), gif (animasyon bağlantısı).
+  kind       String   @default("text")
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 

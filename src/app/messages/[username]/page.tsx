@@ -44,6 +44,7 @@ export default async function ChatPage({
     senderId: m.senderId,
     receiverId: m.receiverId,
     body: m.body,
+    kind: m.kind,
     createdAt: m.createdAt.toISOString(),
     read: m.read,
   }));

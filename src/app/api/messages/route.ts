@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     },
     orderBy: { createdAt: "asc" },
     take: 200,
-    select: { id: true, senderId: true, receiverId: true, body: true, createdAt: true, read: true },
+    select: { id: true, senderId: true, receiverId: true, body: true, kind: true, createdAt: true, read: true },
   });
 
   return Response.json({ messages });

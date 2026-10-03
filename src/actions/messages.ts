@@ -11,11 +11,13 @@ import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
 const sendSchema = z.object({
   receiverId: z.string().min(1),
   body: z.string().trim().min(1, "Mesaj boş olamaz").max(1000, "Mesaj çok uzun"),
+  kind: z.enum(["text", "sticker", "gif"]).optional(),
 });
 
 export async function sendMessageAction(input: {
   receiverId: string;
   body: string;
+  kind?: "text" | "sticker" | "gif";
 }): Promise<{ error?: string; ok?: boolean }> {
   const user = await requireUser();
 
@@ -29,8 +31,18 @@ export async function sendMessageAction(input: {
     return { error: parsed.error.issues[0]?.message || "Geçersiz mesaj" };
   }
 
-  // 🐺 Bozkurt Koruma: küfür filtresi.
-  if (containsProfanity(parsed.data.body)) {
+  const kind = parsed.data.kind ?? "text";
+
+  // Çıkartma tek emoji, GIF geçerli bağlantı olmalı.
+  if (kind === "sticker" && parsed.data.body.length > 20) {
+    return { error: "Geçersiz çıkartma" };
+  }
+  if (kind === "gif" && !/^https?:\/\//.test(parsed.data.body)) {
+    return { error: "Geçersiz GIF" };
+  }
+
+  // 🐺 Bozkurt Koruma: yazı mesajlarında küfür filtresi.
+  if (kind === "text" && containsProfanity(parsed.data.body)) {
     return { error: PROFANITY_ERROR };
   }
 
@@ -56,6 +68,7 @@ export async function sendMessageAction(input: {
       senderId: user.id,
       receiverId: receiver.id,
       body: parsed.data.body,
+      kind,
     },
   });
 

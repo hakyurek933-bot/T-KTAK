@@ -10,6 +10,7 @@ import {
   type LiveSnapshot,
 } from "@/actions/live";
 import { findGift } from "@/lib/coins";
+import { EmojiPicker } from "@/components/EmojiPicker";
 import { LIVE_JOIN_TEXT } from "@/lib/utils";
 import { RoleTag } from "@/components/RoleTag";
 import type { Role } from "@prisma/client";
@@ -38,9 +39,11 @@ export function LiveChat({
   const [snapshot, setSnapshot] = useState<LiveSnapshot>(initial);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // 3 saniyede bir anlık görüntü (mesajlar + hediyeler + izleyici + durum).
   useEffect(() => {
@@ -214,25 +217,50 @@ export function LiveChat({
       </div>
 
       {live ? (
-        <form
-          onSubmit={handleSend}
-          className="flex items-center gap-2 border-t border-white/10 p-3"
-        >
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Mesaj yaz..."
-            maxLength={500}
-            className="w-full rounded-full border border-white/10 bg-panel-2 px-4 py-2.5 text-sm outline-none focus:border-brand"
-          />
-          <button
-            type="submit"
-            disabled={sending || !text.trim()}
-            className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+        <>
+          {panelOpen && (
+            <div className="border-t border-white/10 p-2">
+              <EmojiPicker
+                tabs={["emoji"]}
+                onEmoji={(e) => {
+                  setText((t) => t + e);
+                  inputRef.current?.focus();
+                  setPanelOpen(false);
+                }}
+                onSticker={() => {}}
+                onGif={() => {}}
+              />
+            </div>
+          )}
+          <form
+            onSubmit={handleSend}
+            className="flex items-center gap-2 border-t border-white/10 p-3"
           >
-            Gönder
-          </button>
-        </form>
+            <button
+              type="button"
+              onClick={() => setPanelOpen((o) => !o)}
+              title="Emoji"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xl transition active:scale-90 hover:bg-white/10"
+            >
+              😀
+            </button>
+            <input
+              ref={inputRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Mesaj yaz..."
+              maxLength={500}
+              className="w-full rounded-full border border-white/10 bg-panel-2 px-4 py-2.5 text-sm outline-none focus:border-brand"
+            />
+            <button
+              type="submit"
+              disabled={sending || !text.trim()}
+              className="rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              Gönder
+            </button>
+          </form>
+        </>
       ) : (
         <p className="border-t border-white/10 p-3 text-center text-xs text-muted">
           Yayın sona erdiği için sohbet kapalı.
