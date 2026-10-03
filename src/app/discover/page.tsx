@@ -8,6 +8,10 @@ import { VideoThumb } from "@/components/VideoThumb";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Keşfet — Taktik" };
 
+function weekAgo() {
+  return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+}
+
 export default async function DiscoverPage() {
   const [posts, creators, tags] = await Promise.all([
     prisma.post.findMany({
@@ -44,7 +48,7 @@ export default async function DiscoverPage() {
   try {
     const recent = await prisma.post.findMany({
       where: {
-        createdAt: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        createdAt: { gt: weekAgo() },
         caption: { not: null },
       },
       take: 200,
