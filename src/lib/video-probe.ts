@@ -1,6 +1,7 @@
 /** İstemci tarafı video ön kontrolleri (sunucuya gitmeden eler). */
 
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 function probeSrc(src: string, timeoutMs = 10000): Promise<boolean> {
   return new Promise((resolve) => {

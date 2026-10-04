@@ -18,6 +18,7 @@ export default async function StudioPage() {
     caption: string | null;
     viewCount: number;
     promotedUntil: Date | null;
+    mediaType: string | null;
     createdAt: Date;
     _count: { likes: number; comments: number };
   }[] = [];
@@ -31,6 +32,7 @@ export default async function StudioPage() {
         caption: true,
         viewCount: true,
         promotedUntil: true,
+        mediaType: true,
         createdAt: true,
         _count: { select: { likes: true, comments: true } },
       },
@@ -67,6 +69,7 @@ export default async function StudioPage() {
           caption: p.caption,
           viewCount: p.viewCount,
           promotedUntil: p.promotedUntil ? p.promotedUntil.toISOString() : null,
+          mediaType: p.mediaType,
           createdAt: p.createdAt.toISOString(),
           likes: p._count.likes,
           comments: p._count.comments,

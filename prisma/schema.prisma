@@ -146,6 +146,8 @@ model Post {
   videoUrl  String
   caption   String?
   viewCount Int      @default(0)
+  // Medya türü: video veya image (fotoğraf/GIF).
+  mediaType String   @default("video")
   // Coin ile öne çıkarma bitişi (bu tarihe kadar Keşfet'te üstte).
   promotedUntil DateTime?
   // Düet: bu video başka bir videoya tepki olarak çekildiyse orijinali.

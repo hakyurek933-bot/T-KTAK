@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Avatar } from "@/components/Avatar";
@@ -31,6 +31,7 @@ export type FeedItemData = {
   caption: string | null;
   viewCount: number;
   promotedUntil?: Date | string | null;
+  mediaType?: string | null;
   duetOf?: { videoUrl: string; author: { username: string } } | null;
   createdAt: Date | string;
   author: {
@@ -74,6 +75,7 @@ export function FeedItem({
   const [isPending, startTransition] = useTransition();
   const [hearts, setHearts] = useState<number[]>([]);
   const boosted = isActivePromo(post.promotedUntil);
+  const isImage = post.mediaType === "image";
 
   function handleVisible() {
     incrementViewAction(post.id).catch(() => {});
@@ -170,6 +172,8 @@ export function FeedItem({
               </span>
             </div>
           </div>
+        ) : isImage ? (
+          <ImageMedia src={post.videoUrl} onVisible={handleVisible} onLike={handleLike} />
         ) : (
           <VideoPlayer
             src={post.videoUrl}
@@ -311,8 +315,17 @@ export function FeedItem({
           )}
 
           <p className="mt-2 flex items-center gap-1.5 text-xs text-white/80">
-            <MusicIcon size={12} />
-            <span className="truncate">orijinal ses — @{post.author.username}</span>
+            {isImage ? (
+              <>
+                <span>📷</span>
+                <span className="truncate">Fotoğraf — @{post.author.username}</span>
+              </>
+            ) : (
+              <>
+                <MusicIcon size={12} />
+                <span className="truncate">orijinal ses — @{post.author.username}</span>
+              </>
+            )}
           </p>
 
           {post.duetOf && (
@@ -330,7 +343,7 @@ export function FeedItem({
           )}
           {currentUserId && (
             <div className="mt-2 flex items-center gap-3">
-              {currentUserId !== post.author.id && (
+              {currentUserId !== post.author.id && !isImage && !post.duetOf && (
                 <Link
                   href={`/upload?duet=${post.id}`}
                   className="text-xs font-semibold text-brand-2 hover:underline"
@@ -356,6 +369,48 @@ export function FeedItem({
         onCommentAdded={() => setCommentCount((c) => c + 1)}
       />
     </section>
+  );
+}
+
+/** Akıştaki fotoğraf gönderisi: görününce izlenme sayar, çift tık beğenir. */
+function ImageMedia({
+  src,
+  onVisible,
+  onLike,
+}: {
+  src: string;
+  onVisible: () => void;
+  onLike: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const seen = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ob = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !seen.current) {
+          seen.current = true;
+          onVisible();
+        }
+      },
+      { threshold: 0.6 }
+    );
+    ob.observe(el);
+    return () => ob.disconnect();
+  }, [onVisible]);
+
+  return (
+    <div ref={ref} onDoubleClick={onLike} className="grid h-full w-full place-items-center bg-black">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        className="max-h-full max-w-full object-contain"
+      />
+    </div>
   );
 }
 

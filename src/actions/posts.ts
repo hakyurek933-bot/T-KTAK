@@ -16,6 +16,7 @@ const postSchema = z.object({
   videoUrl: z.string().url("Geçerli bir video bağlantısı gerekli").max(2000),
   caption: z.string().max(300, "Açıklama en fazla 300 karakter").optional(),
   duetOfId: z.string().min(1).max(50).optional(),
+  mediaType: z.enum(["video", "image"]).optional(),
 });
 
 export async function createPostAction(
@@ -28,6 +29,7 @@ export async function createPostAction(
     videoUrl: String(formData.get("videoUrl") || "").trim(),
     caption: String(formData.get("caption") || "").trim() || undefined,
     duetOfId: String(formData.get("duetOfId") || "").trim() || undefined,
+    mediaType: String(formData.get("mediaType") || "").trim() || undefined,
   });
 
   if (!parsed.success) {
@@ -43,11 +45,17 @@ export async function createPostAction(
   if (parsed.data.duetOfId) {
     const original = await prisma.post.findUnique({
       where: { id: parsed.data.duetOfId },
-      select: { id: true, duetOfId: true },
+      select: { id: true, duetOfId: true, mediaType: true },
     });
     if (!original) return { error: "Düet yapılacak video bulunamadı" };
     if (original.duetOfId) {
       return { error: "Düet videosuna düet yapılamaz" };
+    }
+    if (original.mediaType !== "video") {
+      return { error: "Yalnızca videolara düet yapılır" };
+    }
+    if (parsed.data.mediaType === "image") {
+      return { error: "Düet tepkisi video olmalı" };
     }
   }
 
@@ -57,6 +65,7 @@ export async function createPostAction(
       videoUrl: parsed.data.videoUrl,
       caption: parsed.data.caption ?? null,
       duetOfId: parsed.data.duetOfId ?? null,
+      mediaType: parsed.data.mediaType ?? "video",
     },
   });
 

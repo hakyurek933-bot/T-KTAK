@@ -275,7 +275,7 @@ export default async function DiscoverPage() {
                 href={`/?v=${p.id}`}
                 className="relative aspect-[9/16] w-28 shrink-0 overflow-hidden rounded-xl bg-panel-2 ring-1 ring-amber-400/40"
               >
-                <VideoThumb src={p.videoUrl} />
+                <VideoThumb src={p.videoUrl} kind={p.mediaType === "image" ? "image" : "video"} />
                 <span className="absolute bottom-1 left-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-extrabold text-black">
                   ⚡
                 </span>
@@ -309,7 +309,7 @@ export default async function DiscoverPage() {
                 href={`/?v=${p.id}`}
                 className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-panel-2"
               >
-                <VideoThumb src={p.videoUrl} />
+                <VideoThumb src={p.videoUrl} kind={p.mediaType === "image" ? "image" : "video"} />
                 <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
                 <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-xs font-semibold text-white drop-shadow">
                   <PlayIcon size={14} />

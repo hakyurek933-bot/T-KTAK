@@ -33,6 +33,10 @@ export async function POST(request: Request): Promise<Response> {
             "video/ogg",
             "video/3gpp",
             "video/3gpp2",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
           ],
           maximumSizeInBytes: 50 * 1024 * 1024, // 50 MB
           addRandomSuffix: true,

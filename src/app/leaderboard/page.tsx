@@ -15,6 +15,7 @@ export default async function LeaderboardPage() {
   type TopVideo = {
     id: string;
     videoUrl: string;
+    mediaType: string | null;
     author: { username: string };
     likes: number;
   };
@@ -35,6 +36,7 @@ export default async function LeaderboardPage() {
       select: {
         id: true,
         videoUrl: true,
+        mediaType: true,
         author: { select: { username: true } },
         _count: { select: { likes: true } },
       },
@@ -46,6 +48,7 @@ export default async function LeaderboardPage() {
       .map((v) => ({
         id: v.id,
         videoUrl: v.videoUrl,
+        mediaType: v.mediaType,
         author: v.author,
         likes: v.likes,
       }));
@@ -104,7 +107,7 @@ export default async function LeaderboardPage() {
                   href={`/?v=${v.id}`}
                   className="group relative block aspect-[9/16] overflow-hidden rounded-xl bg-panel-2"
                 >
-                  <VideoThumb src={v.videoUrl} />
+                  <VideoThumb src={v.videoUrl} kind={v.mediaType === "image" ? "image" : "video"} />
                   <span
                     className={`absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full text-xs font-extrabold ${
                       i === 0

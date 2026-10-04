@@ -52,7 +52,7 @@ export default async function SavedPage() {
               href={`/?v=${post.id}`}
               className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-panel-2"
             >
-              <VideoThumb src={post.videoUrl} />
+              <VideoThumb src={post.videoUrl} kind={post.mediaType === "image" ? "image" : "video"} />
               <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
               <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-xs font-semibold text-white drop-shadow">
                 <PlayIcon size={12} />@{post.author.username}

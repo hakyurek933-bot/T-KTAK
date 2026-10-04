@@ -127,7 +127,7 @@ export default async function SearchPage({ searchParams }: PageProps<"/search">)
                 href={`/?v=${p.id}`}
                 className="group relative aspect-[9/16] overflow-hidden rounded-lg bg-panel-2"
               >
-                <VideoThumb src={p.videoUrl} />
+                <VideoThumb src={p.videoUrl} kind={p.mediaType === "image" ? "image" : "video"} />
                 <div className="absolute inset-0 bg-black/0 transition group-hover:bg-black/30" />
                 <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-xs font-semibold text-white drop-shadow">
                   <PlayIcon size={12} />@{p.author.username}

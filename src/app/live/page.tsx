@@ -29,11 +29,11 @@ export default async function LivePage() {
     _count: { viewers: number };
   }[] = [];
   let ended: { id: string; title: string; author: { username: string } }[] = [];
-  let myVideos: { id: string; videoUrl: string; caption: string | null }[] = [];
+  let myVideos: { id: string; videoUrl: string; caption: string | null; mediaType?: string | null }[] = [];
   let tablesReady = true;
 
   try {
-    [live, ended, myVideos] = await Promise.all([
+    [live, ended] = await Promise.all([
       prisma.liveRoom.findMany({
         where: { status: "LIVE" },
         orderBy: { startedAt: "desc" },
@@ -56,16 +56,32 @@ export default async function LivePage() {
         take: 12,
         select: { id: true, title: true, author: { select: { username: true } } },
       }),
-      prisma.post.findMany({
-        where: { authorId: me.id },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-        select: { id: true, videoUrl: true, caption: true },
-      }),
     ]);
   } catch {
     tablesReady = false;
   }
+
+  // Videolarım (canlı fonu yalnızca video olabilir; kolon yoksa türsüz dene).
+  try {
+    myVideos = await prisma.post.findMany({
+      where: { authorId: me.id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      select: { id: true, videoUrl: true, caption: true, mediaType: true },
+    });
+  } catch {
+    try {
+      myVideos = await prisma.post.findMany({
+        where: { authorId: me.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: { id: true, videoUrl: true, caption: true },
+      });
+    } catch {
+      myVideos = [];
+    }
+  }
+  const liveVideos = myVideos.filter((v) => v.mediaType !== "image");
 
   return (
     <div className="mx-auto w-full max-w-2xl px-3 py-5">
@@ -114,7 +130,7 @@ export default async function LivePage() {
         </ul>
       )}
 
-      <StartLiveForm videos={myVideos} />
+      <StartLiveForm videos={liveVideos} />
 
       {ended.length > 0 && (
         <section className="mt-8">

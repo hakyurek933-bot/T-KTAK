@@ -15,6 +15,7 @@ export type StudioPost = {
   caption: string | null;
   viewCount: number;
   promotedUntil: string | null;
+  mediaType?: string | null;
   createdAt: string;
   likes: number;
   comments: number;
@@ -41,6 +42,11 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
     (async () => {
       for (const p of posts) {
         if (!alive) break;
+        // Fotoğraflar video testinden geçemez; doğrudan sağlam say.
+        if (p.mediaType === "image") {
+          if (alive) setStatus((s) => ({ ...s, [p.id]: "ok" }));
+          continue;
+        }
         try {
           const ok = await probeUrlPlayable(p.videoUrl);
           if (alive) setStatus((s) => ({ ...s, [p.id]: ok ? "ok" : "bad" }));
@@ -179,7 +185,7 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
             className="flex gap-3 rounded-2xl border border-white/10 bg-panel p-3"
           >
             <div className="aspect-[9/16] w-20 shrink-0 overflow-hidden rounded-xl bg-black">
-              <VideoThumb src={p.videoUrl} />
+              <VideoThumb src={p.videoUrl} kind={p.mediaType === "image" ? "image" : "video"} />
             </div>
             <div className="min-w-0 flex-1">
               {editingId === p.id ? (

@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { createPostAction, type PostState } from "@/actions/posts";
-import { MAX_VIDEO_BYTES, probeFilePlayable } from "@/lib/video-probe";
+import { MAX_VIDEO_BYTES, MAX_IMAGE_BYTES, probeFilePlayable } from "@/lib/video-probe";
 
 export function UploadForm({
   duetOf = null,
@@ -17,6 +17,7 @@ export function UploadForm({
 
   const [tab, setTab] = useState<"file" | "link">("file");
   const [videoUrl, setVideoUrl] = useState("");
+  const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [uploading, setUploading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -27,10 +28,24 @@ export function UploadForm({
 
   async function handleFile(file: File) {
     setUploadError(null);
-    setFileInfo(`${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`);
-    if (file.size > MAX_VIDEO_BYTES) {
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    if (!isImage && !isVideo) {
+      setUploadError("Yalnızca video veya fotoğraf seçebilirsin.");
+      return;
+    }
+    if (duetOf && isImage) {
+      setUploadError("Düet tepkisi video olmalı. Bir video seç.");
+      return;
+    }
+    const limit = isImage ? MAX_IMAGE_BYTES : MAX_VIDEO_BYTES;
+    const mb = (file.size / 1024 / 1024).toFixed(1);
+    setFileInfo(`${file.name} (${mb} MB)`);
+    if (file.size > limit) {
       setUploadError(
-        `Video çok büyük (${(file.size / 1024 / 1024).toFixed(1)} MB). En fazla 50 MB yükleyebilirsin — daha kısa bir video dene.`
+        isImage
+          ? `Fotoğraf çok büyük (${mb} MB). En fazla 10 MB olabilir.`
+          : `Video çok büyük (${mb} MB). En fazla 50 MB yükleyebilirsin — daha kısa bir video dene.`
       );
       return;
     }
@@ -38,14 +53,18 @@ export function UploadForm({
     setChecking(true);
     setProgress(0);
     try {
-      const playable = await probeFilePlayable(file);
-      setChecking(false);
-      if (!playable) {
-        setUploadError(
-          "Bu video bu tarayıcıda oynatılamıyor (örn. iPhone 'Verimli' modunda çekilmiş olabilir). iPhone'da Ayarlar → Kamera → Formatlar → 'En Uyumlu'yu seçip tekrar çek, ya da videoyu MP4 (H.264) olarak kaydet."
-        );
-        setUploading(false);
-        return;
+      if (isVideo) {
+        const playable = await probeFilePlayable(file);
+        setChecking(false);
+        if (!playable) {
+          setUploadError(
+            "Bu video bu tarayıcıda oynatılamıyor (örn. iPhone 'Verimli' modunda çekilmiş olabilir). iPhone'da Ayarlar → Kamera → Formatlar → 'En Uyumlu'yu seçip tekrar çek, ya da videoyu MP4 (H.264) olarak kaydet."
+          );
+          setUploading(false);
+          return;
+        }
+      } else {
+        setChecking(false);
       }
       const pathname = createBlobPathname(file);
       const blob = await upload(pathname, file, {
@@ -55,6 +74,7 @@ export function UploadForm({
         onUploadProgress: (e) => setProgress(Math.round(e.percentage)),
       });
       setVideoUrl(blob.url);
+      setMediaType(isImage ? "image" : "video");
     } catch (err) {
       setUploadError(
         err instanceof Error ? err.message : "Yükleme başarısız oldu."
@@ -80,8 +100,17 @@ export function UploadForm({
               ? ".ogv"
               : file.type === "video/3gpp" || file.type === "video/3gpp2"
                 ? ".3gp"
-                : "";
-    const ext = (nameExt || typeExt || ".mp4").replace(/[^a-z0-9.]/g, "").slice(0, 5);
+                : file.type === "image/jpeg"
+                  ? ".jpg"
+                  : file.type === "image/png"
+                    ? ".png"
+                    : file.type === "image/webp"
+                      ? ".webp"
+                      : file.type === "image/gif"
+                        ? ".gif"
+                        : "";
+    const fallback = file.type.startsWith("image/") ? ".jpg" : ".mp4";
+    const ext = (nameExt || typeExt || fallback).replace(/[^a-z0-9.]/g, "").slice(0, 5);
     const random = Math.random().toString(36).slice(2, 10);
     return `videos/${Date.now()}-${random}${ext.startsWith(".") ? ext : `.${ext}`}`;
   }
@@ -144,7 +173,7 @@ export function UploadForm({
           <input
             ref={fileRef}
             type="file"
-            accept="video/*"
+            accept={duetOf ? "video/*" : "video/*,image/*"}
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -153,7 +182,12 @@ export function UploadForm({
           />
           {videoUrl ? (
             <div className="flex flex-col items-center gap-2">
-              <video src={videoUrl} controls className="max-h-64 rounded-xl" />
+              {mediaType === "image" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={videoUrl} alt="" className="max-h-64 rounded-xl" />
+              ) : (
+                <video src={videoUrl} controls className="max-h-64 rounded-xl" />
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -162,7 +196,7 @@ export function UploadForm({
                 }}
                 className="text-xs text-muted hover:text-white"
               >
-                Başka video seç
+                Başka dosya seç
               </button>
             </div>
           ) : uploading ? (
@@ -190,9 +224,11 @@ export function UploadForm({
                 🎬
               </p>
               <p className="mt-2 text-sm text-muted">
-                Video dosyanı seç veya buraya sürükle
+                Video veya fotoğraf seç, ya da buraya sürükle
               </p>
-              <p className="text-xs text-muted">(mp4 / 3gp / webm, en fazla 50 MB)</p>
+              <p className="text-xs text-muted">
+                Video: mp4 / 3gp / webm (50 MB) · Fotoğraf/GIF: jpg / png / gif (10 MB)
+              </p>
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
@@ -205,15 +241,29 @@ export function UploadForm({
           {uploadError && <p className="mt-3 text-xs text-red-400">{uploadError}</p>}
         </div>
       ) : (
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="text-muted">Video bağlantısı (URL)</span>
-          <input
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://ornek.com/video.mp4"
-            className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
-          />
-        </label>
+        <>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="text-muted">Medya bağlantısı (URL)</span>
+            <input
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://ornek.com/video.mp4"
+              className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
+            />
+          </label>
+          <div className="flex gap-2 text-sm">
+            {(["video", "image"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setMediaType(t)}
+                className={`flex-1 rounded-xl border py-2 font-medium ${mediaType === t ? "border-brand bg-brand/15 text-white" : "border-white/10 text-muted"}`}
+              >
+                {t === "video" ? "🎬 Video" : "🖼️ Fotoğraf"}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       <form action={action} className="flex flex-col gap-4">
@@ -223,6 +273,7 @@ export function UploadForm({
           </p>
         )}
         <input type="hidden" name="videoUrl" value={videoUrl} />
+        <input type="hidden" name="mediaType" value={mediaType} />
         {duetOf && <input type="hidden" name="duetOfId" value={duetOf.id} />}
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted">Açıklama (opsiyonel)</span>

@@ -38,12 +38,12 @@ export default async function UploadPage({
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-8">
       <h1 className="mb-1 text-2xl font-bold">
-        {duetOf ? "🎭 Düet çek" : "Yeni video"}
+        {duetOf ? "🎭 Düet çek" : "Yeni paylaşım"}
       </h1>
       <p className="mb-6 text-sm text-muted">
         {duetOf
           ? `@${duetOf.author.username} videosuna yan yana tepki çek`
-          : "Bir video yükle veya bağlantı ekle, açıklamasını yaz."}
+          : "Bir video veya fotoğraf yükle, açıklamasını yaz."}
       </p>
       <UploadForm duetOf={duetOf} />
       <Link
