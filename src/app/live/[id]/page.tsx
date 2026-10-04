@@ -191,6 +191,7 @@ export default async function LiveRoomPage({
         endedSummary={endedSummary}
         category={room.category}
         otherRooms={otherRooms}
+        livekitOn={!!process.env.LIVEKIT_URL}
       />
 
       {room.status === "LIVE" && (

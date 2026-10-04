@@ -184,7 +184,12 @@ export default async function LivePage({
         </ul>
       )}
 
-      <StartLiveForm videos={liveVideos} birthdateOk={birthdateOk} age={age} />
+      <StartLiveForm
+        videos={liveVideos}
+        birthdateOk={birthdateOk}
+        age={age}
+        livekitOn={!!process.env.LIVEKIT_URL}
+      />
 
       {ended.length > 0 && (
         <section className="mt-8">

@@ -11,6 +11,7 @@ import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { Caption } from "@/components/Caption";
 import { PkInvite } from "@/components/PkInvite";
+import { LiveStage } from "@/components/LiveStage";
 import { LIVE_CATEGORIES } from "@/lib/live-meta";
 import type { LiveSnapshot } from "@/actions/live";
 import type { Role } from "@prisma/client";
@@ -50,6 +51,7 @@ export function LiveRoomView({
   endedSummary,
   category,
   otherRooms,
+  livekitOn,
 }: {
   roomId: string;
   title: string;
@@ -66,6 +68,7 @@ export function LiveRoomView({
   endedSummary: EndedSummary | null;
   category: string;
   otherRooms: { id: string; title: string; author: { username: string } }[];
+  livekitOn: boolean;
 }) {
   const [chatOpen, setChatOpen] = useState(true);
   const [giftOpen, setGiftOpen] = useState(false);
@@ -102,7 +105,9 @@ export function LiveRoomView({
       <div className="flex flex-col gap-3 md:flex-row">
         {/* Video */}
         <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-black md:max-h-[78vh] md:min-w-0 md:flex-1">
-          {videoUrl ? (
+          {live && livekitOn ? (
+            <LiveStage roomId={roomId} isPublisher={isAuthor} />
+          ) : videoUrl ? (
             <VideoPlayer src={videoUrl} />
           ) : (
             <div className="grid h-full w-full place-items-center bg-gradient-to-b from-panel to-black p-6 text-center">

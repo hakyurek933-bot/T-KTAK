@@ -11,16 +11,21 @@ export function StartLiveForm({
   videos,
   birthdateOk,
   age,
+  livekitOn,
 }: {
   videos: { id: string; videoUrl: string | null; caption: string | null }[];
   birthdateOk: boolean;
   age: number | null;
+  livekitOn: boolean;
 }) {
   const [state, action, pending] = useActionState<LiveState, FormData>(
     startLiveAction,
     null
   );
   const [category, setCategory] = useState("sohbet");
+  const [source, setSource] = useState<"camera" | "video">(
+    livekitOn ? "camera" : "video"
+  );
   const [changeSource, setChangeSource] = useState(false);
   const [mode, setMode] = useState<"mine" | "link">("mine");
   const [link, setLink] = useState("");
@@ -70,7 +75,41 @@ export function StartLiveForm({
         </div>
         <input type="hidden" name="category" value={category} />
 
-        {/* Fon videosu: otomatik son videon */}
+        {/* Kaynak: kamera veya video fonu */}
+        <div className="flex gap-1.5 rounded-xl border border-white/10 bg-panel-2 p-1 text-sm">
+          <button
+            type="button"
+            onClick={() => setSource("camera")}
+            className={`flex-1 rounded-lg py-2 font-bold ${source === "camera" ? "bg-white/10 text-white" : "text-muted"}`}
+          >
+            📷 Kamera
+          </button>
+          <button
+            type="button"
+            onClick={() => setSource("video")}
+            className={`flex-1 rounded-lg py-2 font-bold ${source === "video" ? "bg-white/10 text-white" : "text-muted"}`}
+          >
+            🎬 Video fonu
+          </button>
+        </div>
+
+        {source === "camera" ? (
+          <div className="rounded-xl border border-white/10 bg-panel-2 p-3 text-center">
+            {livekitOn ? (
+              <p className="text-xs text-muted">
+                📷 Yayın başlayınca kameran açılır, izleyiciler seni{" "}
+                <span className="font-bold text-white">canlı</span> görür.
+              </p>
+            ) : (
+              <p className="text-xs text-amber-300">
+                Kamera için LiveKit anahtarları gerekli (Vercel env). Şimdilik
+                video fonu seçebilirsin.
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Fon videosu: otomatik son videon */}
         {defaultVideo && !changeSource ? (
           <button
             type="button"
@@ -158,8 +197,11 @@ export function StartLiveForm({
             <input type="hidden" name="videoUrl" value={link} />
           </>
         )}
-        {defaultVideo && !changeSource && (
+        {defaultVideo && !changeSource && source === "video" && (
           <input type="hidden" name="videoUrl" value={defaultVideo} />
+        )}
+          </>
+
         )}
 
         {/* Şartlar */}
@@ -179,7 +221,12 @@ export function StartLiveForm({
         )}
 
         <button
-          disabled={pending || !canStart || (!defaultVideo && !link)}
+          disabled={
+            pending ||
+            !canStart ||
+            (source === "video" && !defaultVideo && !link) ||
+            (source === "camera" && !livekitOn)
+          }
           className="rounded-full bg-red-600 py-3.5 text-base font-extrabold text-white transition active:scale-[0.99] disabled:opacity-40"
         >
           {pending ? "Açılıyor..." : "🔴 CANLI Yayın Yap"}

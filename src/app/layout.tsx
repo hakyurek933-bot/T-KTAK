@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TopNav } from "@/components/TopNav";
 import { BottomNav } from "@/components/BottomNav";
+import { VersionCheck } from "@/components/VersionCheck";
 import { getCurrentUser } from "@/lib/auth";
 
 const geistSans = Geist({
@@ -28,6 +29,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex h-dvh flex-col overflow-hidden bg-ink text-foreground">
+        <VersionCheck initialSha={process.env.VERCEL_GIT_COMMIT_SHA ?? "local"} />
         <TopNav />
         <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</main>
         <BottomNav username={user?.username} />

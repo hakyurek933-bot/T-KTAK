@@ -20,7 +20,7 @@ const VIEWER_TTL_SEC = 45;
 
 const startSchema = z.object({
   title: z.string().trim().min(3, "Başlık en az 3 karakter").max(80),
-  videoUrl: z.string().url("Geçerli bir video bağlantısı gerekli").max(2000),
+  videoUrl: z.string().max(2000).optional(),
   category: z
     .string()
     .refine(
@@ -51,11 +51,26 @@ export async function startLiveAction(
 
   const parsed = startSchema.safeParse({
     title: String(formData.get("title") || ""),
-    videoUrl: String(formData.get("videoUrl") || "").trim(),
+    videoUrl: String(formData.get("videoUrl") || "").trim() || undefined,
     category: String(formData.get("category") || "").trim() || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgi" };
+  }
+  if (parsed.data.videoUrl && !/^https?:\/\//.test(parsed.data.videoUrl)) {
+    return { error: "Geçerli bir video bağlantısı gerekli" };
+  }
+
+  // Fon videosu yoksa kamera modudur: LiveKit şart.
+  if (
+    !parsed.data.videoUrl &&
+    (!process.env.LIVEKIT_URL ||
+      !process.env.LIVEKIT_API_KEY ||
+      !process.env.LIVEKIT_API_SECRET)
+  ) {
+    return {
+      error: "Kamera yayını için LiveKit bağlı değil. Video seç ya da anahtarları ekle.",
+    };
   }
 
   // Yaş sınırı: yayın açmak için 15 yaş ve üzeri + doğum tarihi şart.
@@ -86,7 +101,7 @@ export async function startLiveAction(
     data: {
       authorId: user.id,
       title: parsed.data.title,
-      videoUrl: parsed.data.videoUrl,
+      videoUrl: parsed.data.videoUrl ?? null,
       category: parsed.data.category ?? "sohbet",
       status: "LIVE",
     },
