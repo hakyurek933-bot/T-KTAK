@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isStaff } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { StartLiveForm } from "@/components/StartLiveForm";
@@ -101,6 +101,7 @@ export default async function LivePage({
   // Yayın şartı rozeti için yaş bilgisi (kolon yoksa kapalı varsay).
   let birthdateOk = false;
   let age: number | null = null;
+  let followers = 0;
   try {
     const acc = await prisma.user.findUnique({
       where: { id: me.id },
@@ -110,6 +111,11 @@ export default async function LivePage({
     birthdateOk = age !== null;
   } catch {
     birthdateOk = false;
+  }
+  try {
+    followers = await prisma.follow.count({ where: { followingId: me.id } });
+  } catch {
+    followers = 0;
   }
 
   return (
@@ -189,6 +195,8 @@ export default async function LivePage({
         birthdateOk={birthdateOk}
         age={age}
         livekitOn={!!process.env.LIVEKIT_URL}
+        followers={followers}
+        canBypass={isStaff(me.role)}
       />
 
       {ended.length > 0 && (

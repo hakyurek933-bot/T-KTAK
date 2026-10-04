@@ -9,7 +9,7 @@ import { createLog } from "@/lib/log";
 import { getAge, LIVE_MIN_AGE } from "@/lib/age";
 import { LIVE_JOIN_TEXT } from "@/lib/utils";
 import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
-import { LIVE_CATEGORIES, MUTE_MINUTES } from "@/lib/live-meta";
+import { LIVE_CATEGORIES, MUTE_MINUTES, LIVE_MIN_FOLLOWERS } from "@/lib/live-meta";
 import { getActivePoll, type PollView } from "@/actions/polls";
 import { rateLimit } from "@/lib/ratelimit";
 
@@ -88,6 +88,23 @@ export async function startLiveAction(
     return {
       error: `Canlı yayın açmak için ${LIVE_MIN_AGE} yaşından büyük olmalısın`,
     };
+  }
+
+  // Takipçi barajı: 10 takipçiye ulaşmadan yayın açılmaz (ekip muaf).
+  if (!isStaff(user.role)) {
+    let followers = 0;
+    try {
+      followers = await prisma.follow.count({
+        where: { followingId: user.id },
+      });
+    } catch {
+      followers = 0;
+    }
+    if (followers < LIVE_MIN_FOLLOWERS) {
+      return {
+        error: `Yayın açmak için en az ${LIVE_MIN_FOLLOWERS} takipçin olmalı (şu an ${followers}). Video paylaş, takipçi kazan! 🎬`,
+      };
+    }
   }
 
   // Aynı anda tek aktif yayın.

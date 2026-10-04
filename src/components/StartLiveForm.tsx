@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { startLiveAction, type LiveState } from "@/actions/live";
-import { LIVE_CATEGORIES } from "@/lib/live-meta";
+import { LIVE_CATEGORIES, LIVE_MIN_FOLLOWERS } from "@/lib/live-meta";
 
 /** TikTok tarzı sade yayın açma: başlık + kategori + tek buton.
  *  Fon videosu otomatik son videondur; değiştirmek istersen açarsın. */
@@ -12,11 +12,15 @@ export function StartLiveForm({
   birthdateOk,
   age,
   livekitOn,
+  followers,
+  canBypass,
 }: {
   videos: { id: string; videoUrl: string | null; caption: string | null }[];
   birthdateOk: boolean;
   age: number | null;
   livekitOn: boolean;
+  followers: number;
+  canBypass: boolean;
 }) {
   const [state, action, pending] = useActionState<LiveState, FormData>(
     startLiveAction,
@@ -31,7 +35,9 @@ export function StartLiveForm({
   const [link, setLink] = useState("");
 
   const defaultVideo = videos[0]?.videoUrl ?? "";
-  const canStart = birthdateOk && age !== null && age >= 15;
+  const ageOk = birthdateOk && age !== null && age >= 15;
+  const fansOk = canBypass || followers >= LIVE_MIN_FOLLOWERS;
+  const canStart = ageOk && fansOk;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-panel">
@@ -205,7 +211,7 @@ export function StartLiveForm({
         )}
 
         {/* Şartlar */}
-        {!canStart ? (
+        {!ageOk ? (
           <Link
             href="/settings"
             className="rounded-xl bg-amber-500/10 px-3 py-2.5 text-center text-xs font-semibold text-amber-300 ring-1 ring-amber-500/30"
@@ -214,9 +220,24 @@ export function StartLiveForm({
               ? "Yayın açmak için önce doğum tarihini ekle →"
               : "Yayın açmak için 15 yaşından büyük olmalısın"}
           </Link>
+        ) : !fansOk ? (
+          <div className="rounded-xl bg-purple-500/10 px-3 py-2.5 text-center ring-1 ring-purple-500/30">
+            <p className="text-xs font-bold text-purple-200">
+              👥 {followers}/{LIVE_MIN_FOLLOWERS} takipçi
+            </p>
+            <div className="mx-auto mt-1.5 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-purple-400 to-pink-500 transition-all"
+                style={{ width: `${Math.min(100, (followers / LIVE_MIN_FOLLOWERS) * 100)}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[11px] text-muted">
+              Yayın açmak için {LIVE_MIN_FOLLOWERS} takipçiye ulaşmalısın
+            </p>
+          </div>
         ) : (
           <p className="text-center text-[11px] text-muted">
-            ✓ {age} yaşındasın, yayın açabilirsin
+            ✓ {age} yaşındasın{canBypass ? "" : `, 👥 ${followers} takipçin var`} — yayın açabilirsin
           </p>
         )}
 

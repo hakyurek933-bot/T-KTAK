@@ -12,6 +12,9 @@ export const LIVE_CATEGORIES = [
 /** PK yarışma süresi (dakika). Skor = kazanılan beğeni + hediye coini. */
 export const PK_MINUTES = 5;
 
+/** Yayın açmak için gereken en az takipçi (TikTok'taki baraj gibi). */
+export const LIVE_MIN_FOLLOWERS = 10;
+
 /** Anket süresi (dakika). */
 export const POLL_MINUTES = 5;
 
