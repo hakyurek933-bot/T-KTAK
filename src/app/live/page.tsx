@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { StartLiveForm } from "@/components/StartLiveForm";
 import { LIVE_CATEGORIES } from "@/lib/live-meta";
+import { getAge } from "@/lib/age";
 import { timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,20 @@ export default async function LivePage({
   }
   const liveVideos = myVideos.filter((v) => v.mediaType !== "image");
 
+  // Yayın şartı rozeti için yaş bilgisi (kolon yoksa kapalı varsay).
+  let birthdateOk = false;
+  let age: number | null = null;
+  try {
+    const acc = await prisma.user.findUnique({
+      where: { id: me.id },
+      select: { birthdate: true },
+    });
+    age = getAge(acc?.birthdate);
+    birthdateOk = age !== null;
+  } catch {
+    birthdateOk = false;
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl px-3 py-5">
       <h1 className="mb-4 flex items-center gap-2 text-xl font-extrabold">
@@ -169,7 +184,7 @@ export default async function LivePage({
         </ul>
       )}
 
-      <StartLiveForm videos={liveVideos} />
+      <StartLiveForm videos={liveVideos} birthdateOk={birthdateOk} age={age} />
 
       {ended.length > 0 && (
         <section className="mt-8">
