@@ -12,7 +12,7 @@ export function StartLiveForm({
   birthdateOk,
   age,
 }: {
-  videos: { id: string; videoUrl: string; caption: string | null }[];
+  videos: { id: string; videoUrl: string | null; caption: string | null }[];
   birthdateOk: boolean;
   age: number | null;
 }) {
@@ -116,13 +116,13 @@ export function StartLiveForm({
                     <input
                       type="radio"
                       name="videoUrl"
-                      value={v.videoUrl}
+                      value={v.videoUrl ?? ""}
                       defaultChecked={i === 0}
                       className="peer sr-only"
                     />
                     <span className="block aspect-[9/16] overflow-hidden rounded-lg bg-black ring-2 ring-transparent peer-checked:ring-brand">
                       <video
-                        src={v.videoUrl}
+                        src={v.videoUrl ?? ""}
                         muted
                         playsInline
                         preload="metadata"

@@ -53,7 +53,7 @@ export function LiveRoomView({
 }: {
   roomId: string;
   title: string;
-  videoUrl: string;
+  videoUrl: string | null;
   status: "LIVE" | "ENDED";
   author: RoomAuthor;
   initial: LiveSnapshot | null;
@@ -102,7 +102,19 @@ export function LiveRoomView({
       <div className="flex flex-col gap-3 md:flex-row">
         {/* Video */}
         <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-black md:max-h-[78vh] md:min-w-0 md:flex-1">
-          <VideoPlayer src={videoUrl} />
+          {videoUrl ? (
+            <VideoPlayer src={videoUrl} />
+          ) : (
+            <div className="grid h-full w-full place-items-center bg-gradient-to-b from-panel to-black p-6 text-center">
+              <div>
+                <p className="text-5xl">📷</p>
+                <p className="mt-3 font-bold text-white">Kamera yayını</p>
+                <p className="mt-1 text-xs text-muted">
+                  Yayıncı kamerasını açınca görüntü burada olur.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Üst bilgi */}
           <div className="absolute inset-x-0 top-0 z-20 flex items-center gap-2.5 bg-gradient-to-b from-black/80 to-transparent p-3 pb-6">

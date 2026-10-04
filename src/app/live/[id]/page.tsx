@@ -36,7 +36,7 @@ export default async function LiveRoomPage({
   let room: {
     id: string;
     title: string;
-    videoUrl: string;
+    videoUrl: string | null;
     status: "LIVE" | "ENDED";
     likeCount: number;
     category: string;

@@ -44,7 +44,7 @@ export default async function LivePage({
     _count: { viewers: number };
   }[] = [];
   let ended: { id: string; title: string; author: { username: string } }[] = [];
-  let myVideos: { id: string; videoUrl: string; caption: string | null; mediaType?: string | null }[] = [];
+  let myVideos: { id: string; videoUrl: string | null; caption: string | null; mediaType?: string | null }[] = [];
   let tablesReady = true;
 
   try {
