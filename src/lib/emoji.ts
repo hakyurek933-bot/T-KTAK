@@ -31,4 +31,5 @@ export const EMOJI_CATEGORIES: { name: string; emojis: string[] }[] = [
 export const STICKERS: string[] = [
   "🦊","🐺","🔥","👑","💎","🚀","🎭","😂","❤️","👏",
   "🥳","😎","🤝","💪","🙏","🎉","⚡","🌟","💯","🍀",
+  "🐱","😻","😹","😾","🙀","😺","🐈","🐈‍⬛",
 ];

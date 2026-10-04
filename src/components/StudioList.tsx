@@ -274,6 +274,14 @@ export function StudioList({ posts }: { posts: StudioPost[] }) {
               >
                 İndir
               </a>
+              {p.mediaType !== "image" && (
+                <Link
+                  href={`/gif/new?post=${p.id}`}
+                  className="rounded-full border border-white/15 px-3 py-1 text-center text-xs font-semibold hover:border-white/40"
+                >
+                  🎬 GIF yap
+                </Link>
+              )}
               {isActivePromo(p.promotedUntil) ? (
                 <span className="rounded-full bg-amber-400/15 px-3 py-1 text-center text-xs font-bold text-amber-300">
                   ⚡ Öne çıkıyor

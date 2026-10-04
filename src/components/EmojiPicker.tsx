@@ -121,7 +121,7 @@ export function EmojiPicker({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="GIF ara... (örn. komik kedi)"
+              placeholder="GIF ara... (örn. kedi)"
               maxLength={50}
               className="w-full rounded-xl border border-white/10 bg-panel px-3 py-2 text-sm outline-none focus:border-brand"
             />
