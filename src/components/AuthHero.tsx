@@ -1,21 +1,50 @@
-/** Giriş/kayıt sayfaları ortak marka başlığı. */
-export function AuthHero({ title, subtitle }: { title: string; subtitle: string }) {
+import Link from "next/link";
+
+/** Açık temalı giriş/kayıt kabuğu: marka + hap sekmeler + beyaz kart. */
+export function AuthShell({
+  active,
+  subtitle,
+  children,
+}: {
+  active: "login" | "signup";
+  subtitle: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="mb-8 flex flex-col items-center text-center">
-      <div className="grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-brand via-[#e11d48] to-brand-2 text-3xl font-black text-white shadow-[0_0_40px_rgba(254,44,85,0.35)]">
-        T
+    <div className="flex flex-1 flex-col items-center justify-center bg-[#eceef2] px-4 py-10 text-neutral-900">
+      <div className="mb-5 flex flex-col items-center text-center">
+        <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#1e293b] font-serif text-3xl font-bold text-white shadow-lg">
+          T
+        </div>
+        <p className="mt-3 font-serif text-3xl font-bold tracking-tight">
+          Taktik
+        </p>
+        <p className="mt-1 text-sm text-neutral-500">{subtitle}</p>
       </div>
-      <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{title}</h1>
-      <p className="mt-1 text-sm text-muted">{subtitle}</p>
-      <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-        {["🎬 Kısa video", "🔴 Canlı yayın", "🪙 Coin", "💬 Mesaj"].map((f) => (
-          <span
-            key={f}
-            className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-muted"
+      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl sm:p-8">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-full bg-neutral-100 p-1 text-sm font-semibold">
+          <Link
+            href="/login"
+            className={
+              active === "login"
+                ? "rounded-full bg-[#1e293b] py-2 text-center text-white shadow"
+                : "py-2 text-center text-neutral-500 hover:text-neutral-800"
+            }
           >
-            {f}
-          </span>
-        ))}
+            Giriş Yap
+          </Link>
+          <Link
+            href="/signup"
+            className={
+              active === "signup"
+                ? "rounded-full bg-[#1e293b] py-2 text-center text-white shadow"
+                : "py-2 text-center text-neutral-500 hover:text-neutral-800"
+            }
+          >
+            Kayıt Ol
+          </Link>
+        </div>
+        {children}
       </div>
     </div>
   );

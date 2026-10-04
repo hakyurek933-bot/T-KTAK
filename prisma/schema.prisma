@@ -300,7 +300,8 @@ model LiveRoom {
   id        String     @id @default(cuid())
   authorId  String
   title     String
-  videoUrl  String
+  // Kamera yayınında boş olabilir (canlı görüntü LiveKit'ten gelir).
+  videoUrl  String?
   status    LiveStatus @default(LIVE)
   likeCount Int        @default(0)
   // Yayın kategorisi: sohbet, oyun, müzik, spor, eğitim, yemek.

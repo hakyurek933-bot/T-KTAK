@@ -1,62 +1,58 @@
 "use client";
 
-import { useActionState } from "react";
-import Link from "next/link";
+import { useActionState, useState } from "react";
 import { signupAction, type ActionState } from "@/actions/auth";
+
+const inputCls =
+  "w-full rounded-xl bg-neutral-100 px-4 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-2 focus:ring-[#e2482f]/40";
 
 export function SignupForm() {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     signupAction,
     null
   );
+  const [showPass, setShowPass] = useState(false);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
-      {state?.error && (
-        <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/30">
-          {state.error}
-        </p>
-      )}
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Görünen ad</span>
+    <form action={action} className="flex flex-col gap-3">
+      {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
+      <input
+        name="displayName"
+        placeholder="Görünen adın"
+        className={inputCls}
+      />
+      <div className="flex items-center rounded-xl bg-neutral-100 pl-4 focus-within:ring-2 focus-within:ring-[#e2482f]/40">
+        <span className="text-sm text-neutral-400">@</span>
         <input
-          name="displayName"
-          placeholder="Adın Soyadın"
-          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
+          name="username"
+          autoComplete="username"
+          placeholder="kullanici_adi"
+          className="w-full bg-transparent px-1.5 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Kullanıcı adı</span>
-        <div className="flex items-center rounded-xl border border-white/10 bg-panel-2 pl-3 focus-within:border-brand">
-          <span className="text-muted">@</span>
-          <input
-            name="username"
-            autoComplete="username"
-            placeholder="kullanici_adi"
-            className="w-full bg-transparent px-2 py-2.5 text-white outline-none"
-          />
-        </div>
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">E-posta</span>
-        <input
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="ornek@eposta.com"
-          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Şifre</span>
+      </div>
+      <input
+        name="email"
+        type="email"
+        autoComplete="email"
+        placeholder="E-posta adresin"
+        className={inputCls}
+      />
+      <div className="relative">
         <input
           name="password"
-          type="password"
+          type={showPass ? "text" : "password"}
           autoComplete="new-password"
-          placeholder="En az 6 karakter"
-          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
+          placeholder="Şifre (en az 6 karakter)"
+          className={`${inputCls} pr-16`}
         />
-      </label>
+        <button
+          type="button"
+          onClick={() => setShowPass((s) => !s)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-400 hover:text-neutral-700"
+        >
+          {showPass ? "Gizle" : "Göster"}
+        </button>
+      </div>
       {/* Bot tuzağı: gerçek kullanıcılar görmez, botlar doldurur. */}
       <input
         name="website"
@@ -68,15 +64,12 @@ export function SignupForm() {
       />
       <button
         disabled={pending}
-        className="mt-1 rounded-xl bg-brand py-2.5 font-semibold text-white transition hover:bg-brand/90 disabled:opacity-60"
+        className="mt-1 rounded-xl bg-gradient-to-r from-[#e2482f] to-[#b91c1c] py-3 text-sm font-bold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-60"
       >
-        {pending ? "Hesap oluşturuluyor..." : "Kayıt ol"}
+        {pending ? "Hesap oluşturuluyor..." : "Hesap Oluştur"}
       </button>
-      <p className="text-center text-sm text-muted">
-        Zaten hesabın var mı?{" "}
-        <Link href="/login" className="font-medium text-brand-2 hover:underline">
-          Giriş yap
-        </Link>
+      <p className="text-center text-xs text-neutral-400">
+        Kaydolarak +100 🪙 hoş geldin bonusu kazanırsın
       </p>
     </form>
   );

@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Link from "next/link";
 import {
   loginAction,
   requestLoginCodeAction,
   type ActionState,
 } from "@/actions/auth";
+
+const inputCls =
+  "w-full rounded-xl bg-neutral-100 px-4 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 focus:ring-2 focus:ring-[#e2482f]/40";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<ActionState, FormData>(
@@ -18,29 +20,25 @@ export function LoginForm() {
     FormData
   >(requestLoginCodeAction, null);
   const [mode, setMode] = useState<"password" | "code">("password");
+  const [showPass, setShowPass] = useState(false);
 
   if (mode === "code") {
     return (
       <div className="flex flex-col gap-4">
-        <form action={codeAction} className="flex flex-col gap-4">
+        <form action={codeAction} className="flex flex-col gap-3">
           {codeState?.error && (
-            <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/30">
-              {codeState.error}
-            </p>
+            <p className="text-xs text-red-600">{codeState.error}</p>
           )}
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-muted">E-posta</span>
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="ornek@eposta.com"
-              className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
-            />
-          </label>
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="E-posta adresin"
+            className={inputCls}
+          />
           <button
             disabled={codePending}
-            className="mt-1 rounded-xl bg-brand py-2.5 font-semibold text-white transition hover:bg-brand/90 disabled:opacity-60"
+            className="rounded-xl bg-gradient-to-r from-[#e2482f] to-[#b91c1c] py-3 text-sm font-bold text-white shadow-lg disabled:opacity-60"
           >
             {codePending ? "Gönderiliyor..." : "Giriş kodu gönder"}
           </button>
@@ -48,7 +46,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => setMode("password")}
-          className="text-center text-sm text-muted hover:text-white"
+          className="text-center text-sm text-neutral-500 hover:text-neutral-800"
         >
           ← Şifreyle girişe dön
         </button>
@@ -57,45 +55,44 @@ export function LoginForm() {
   }
 
   return (
-    <form action={action} className="flex flex-col gap-4">
-      {state?.error && (
-        <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 ring-1 ring-red-500/30">
-          {state.error}
-        </p>
-      )}
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Kullanıcı adı veya e-posta</span>
-        <input
-          name="identifier"
-          autoComplete="username"
-          placeholder="kurucu veya ornek@eposta.com"
-          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Şifre</span>
+    <form action={action} className="flex flex-col gap-3">
+      {state?.error && <p className="text-xs text-red-600">{state.error}</p>}
+      <input
+        name="identifier"
+        autoComplete="username"
+        placeholder="Kullanıcı adı veya e-posta"
+        className={inputCls}
+      />
+      <div className="relative">
         <input
           name="password"
-          type="password"
+          type={showPass ? "text" : "password"}
           autoComplete="current-password"
-          placeholder="••••••••"
-          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 text-white outline-none focus:border-brand"
+          placeholder="Şifre"
+          className={`${inputCls} pr-16`}
         />
-      </label>
+        <button
+          type="button"
+          onClick={() => setShowPass((s) => !s)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-400 hover:text-neutral-700"
+        >
+          {showPass ? "Gizle" : "Göster"}
+        </button>
+      </div>
       <button
         disabled={pending}
-        className="mt-1 rounded-xl bg-brand py-2.5 font-semibold text-white transition hover:bg-brand/90 disabled:opacity-60"
+        className="mt-1 rounded-xl bg-gradient-to-r from-[#e2482f] to-[#b91c1c] py-3 text-sm font-bold text-white shadow-lg transition active:scale-[0.99] disabled:opacity-60"
       >
-        {pending ? "Giriş yapılıyor..." : "Giriş yap"}
+        {pending ? "Giriş yapılıyor..." : "Giriş Yap"}
       </button>
-      <div className="flex items-center gap-3 text-xs text-muted">
-        <span className="h-px flex-1 bg-white/10" />
+      <div className="flex items-center gap-3 text-xs text-neutral-400">
+        <span className="h-px flex-1 bg-neutral-200" />
         veya
-        <span className="h-px flex-1 bg-white/10" />
+        <span className="h-px flex-1 bg-neutral-200" />
       </div>
       <a
         href="/api/auth/google"
-        className="flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white py-2.5 font-semibold text-neutral-900 transition hover:bg-neutral-100"
+        className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white py-3 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50"
       >
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path
@@ -120,16 +117,10 @@ export function LoginForm() {
       <button
         type="button"
         onClick={() => setMode("code")}
-        className="text-center text-sm text-muted hover:text-white"
+        className="text-center text-sm text-neutral-500 hover:text-neutral-800"
       >
         E-posta koduyla giriş yap
       </button>
-      <p className="text-center text-sm text-muted">
-        Hesabın yok mu?{" "}
-        <Link href="/signup" className="font-medium text-brand-2 hover:underline">
-          Kayıt ol
-        </Link>
-      </p>
     </form>
   );
 }
