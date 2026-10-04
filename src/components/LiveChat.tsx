@@ -5,10 +5,17 @@ import {
   deleteLiveMessageAction,
   endLiveAction,
   getLiveSnapshot,
+  muteUserAction,
   sendLiveMessageAction,
   type LiveGiftView,
   type LiveSnapshot,
 } from "@/actions/live";
+import {
+  closePollAction,
+  startPollAction,
+  votePollAction,
+  type PollView,
+} from "@/actions/polls";
 import { findGift } from "@/lib/coins";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { LIVE_JOIN_TEXT } from "@/lib/utils";
@@ -41,9 +48,18 @@ export function LiveChat({
   const [sending, setSending] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
+  const [splash, setSplash] = useState<LiveGiftView | null>(null);
+  const [pollForm, setPollForm] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [options, setOptions] = useState<string[]>(["", ""]);
+  const [pollBusy, setPollBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastGiftRef = useRef<string | null>(
+    initial.gifts.length > 0 ? initial.gifts[initial.gifts.length - 1].id : null
+  );
 
   // 3 saniyede bir anlık görüntü (mesajlar + hediyeler + izleyici + durum).
   useEffect(() => {
@@ -67,6 +83,18 @@ export function LiveChat({
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [feedLen]);
+
+  // Yeni hediyede tam ekran yağmur animasyonu.
+  useEffect(() => {
+    if (snapshot.gifts.length === 0) return;
+    const latest = snapshot.gifts[snapshot.gifts.length - 1];
+    if (latest.id !== lastGiftRef.current) {
+      lastGiftRef.current = latest.id;
+      setSplash(latest);
+      const t = setTimeout(() => setSplash(null), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [snapshot.gifts]);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -99,6 +127,65 @@ export function LiveChat({
         ...s,
         messages: s.messages.filter((m) => m.id !== id),
       }));
+    }
+  }
+
+  async function handleMute(username: string) {
+    if (!confirm(`@${username} 10 dakika susturulsun mu?`)) return;
+    setError(null);
+    setInfo(null);
+    const res = await muteUserAction(roomId, username);
+    if (res.error) setError(res.error);
+    else setInfo(`@${username} susturuldu 🔇`);
+  }
+
+  async function handleVote(pollId: string, idx: number) {
+    const res = await votePollAction(pollId, idx);
+    if (res.error) {
+      setError(res.error);
+    } else {
+      try {
+        const next = await getLiveSnapshot(roomId);
+        if (next) setSnapshot(next);
+      } catch {
+        /* sessizce yoksay */
+      }
+    }
+  }
+
+  async function handleStartPoll(e: React.FormEvent) {
+    e.preventDefault();
+    const opts = options.map((o) => o.trim()).filter(Boolean);
+    if (question.trim().length < 2 || opts.length < 2) return;
+    setPollBusy(true);
+    const res = await startPollAction({
+      roomId,
+      question: question.trim(),
+      options: opts,
+    });
+    if (res.error) {
+      setError(res.error);
+    } else {
+      setQuestion("");
+      setOptions(["", ""]);
+      setPollForm(false);
+      try {
+        const next = await getLiveSnapshot(roomId);
+        if (next) setSnapshot(next);
+      } catch {
+        /* sessizce yoksay */
+      }
+    }
+    setPollBusy(false);
+  }
+
+  async function handleClosePoll(pollId: string) {
+    await closePollAction(pollId);
+    try {
+      const next = await getLiveSnapshot(roomId);
+      if (next) setSnapshot(next);
+    } catch {
+      /* sessizce yoksay */
     }
   }
 
@@ -138,7 +225,7 @@ export function LiveChat({
 
   return (
     <div
-      className={`flex flex-col overflow-hidden bg-panel ${
+      className={`relative flex flex-col overflow-hidden bg-panel ${
         compact ? "h-full border-0 bg-transparent" : "h-[60vh] rounded-2xl border border-white/10 md:h-[70vh]"
       }`}
     >
@@ -174,6 +261,69 @@ export function LiveChat({
       </div>
 
       <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
+        {snapshot.poll ? (
+          <PollCard
+            poll={snapshot.poll}
+            isAuthor={isAuthor}
+            canModerate={canModerate}
+            onVote={(idx) => handleVote(snapshot.poll!.id, idx)}
+            onClose={() => handleClosePoll(snapshot.poll!.id)}
+          />
+        ) : (
+          live &&
+          isAuthor && (
+            <button
+              type="button"
+              onClick={() => setPollForm((v) => !v)}
+              className="w-full rounded-xl border border-dashed border-white/15 py-2 text-xs font-semibold text-muted hover:text-white"
+            >
+              📊 Anket başlat
+            </button>
+          )
+        )}
+        {pollForm && live && isAuthor && (
+          <form
+            onSubmit={handleStartPoll}
+            className="flex flex-col gap-2 rounded-xl border border-white/10 bg-panel-2 p-3"
+          >
+            <input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Anket sorusu..."
+              maxLength={120}
+              className="rounded-lg border border-white/10 bg-panel px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            />
+            {options.map((o, i) => (
+              <input
+                key={i}
+                value={o}
+                onChange={(e) =>
+                  setOptions((arr) => arr.map((x, j) => (j === i ? e.target.value : x)))
+                }
+                placeholder={`${i + 1}. seçenek`}
+                maxLength={30}
+                className="rounded-lg border border-white/10 bg-panel px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+              />
+            ))}
+            <div className="flex gap-2">
+              {options.length < 4 && (
+                <button
+                  type="button"
+                  onClick={() => setOptions((a) => [...a, ""])}
+                  className="text-xs text-muted hover:text-white"
+                >
+                  + Seçenek ekle
+                </button>
+              )}
+              <button
+                disabled={pollBusy}
+                className="ml-auto rounded-full bg-brand px-4 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+              >
+                {pollBusy ? "..." : "Başlat"}
+              </button>
+            </div>
+          </form>
+        )}
         {shown.length === 0 && (
           <p className="py-8 text-center text-sm text-muted">
             {live ? "Henüz mesaj yok. İlk mesajı sen yaz!" : "Bu yayında mesaj yok."}
@@ -208,6 +358,16 @@ export function LiveChat({
                   className="ml-1 text-xs text-white/40 opacity-0 hover:text-red-400 group-hover:opacity-100"
                 >
                   ✕
+                </button>
+              )}
+              {canDelete && !mine && (
+                <button
+                  type="button"
+                  onClick={() => handleMute(m.author.username)}
+                  title="10 dk sustur"
+                  className="ml-1 text-xs opacity-0 hover:text-amber-300 group-hover:opacity-100"
+                >
+                  🔇
                 </button>
               )}
             </div>
@@ -267,6 +427,90 @@ export function LiveChat({
         </p>
       )}
       {error && <p className="px-4 pb-2 text-xs text-red-400">{error}</p>}
+      {info && <p className="px-4 pb-2 text-xs text-emerald-400">{info}</p>}
+      {splash && (
+        <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
+          <div className="animate-gift-pop flex flex-col items-center">
+            <span className="text-8xl drop-shadow-2xl">
+              {findGift(splash.gift)?.emoji ?? "🎁"}
+            </span>
+            <span className="mt-1 rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-amber-300 backdrop-blur">
+              @{splash.sender.username} x{splash.count}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 📊 Canlı anket kartı: oy verme + sonuç çubukları + yayıncı bitirme. */
+function PollCard({
+  poll,
+  isAuthor,
+  canModerate,
+  onVote,
+  onClose,
+}: {
+  poll: NonNullable<PollView>;
+  isAuthor: boolean;
+  canModerate: boolean;
+  onVote: (idx: number) => void;
+  onClose: () => void;
+}) {
+  const voted = poll.myVote !== null;
+  return (
+    <div className="rounded-xl border border-purple-400/30 bg-purple-500/10 p-2.5">
+      <div className="flex items-center gap-2">
+        <p className="flex-1 truncate text-sm font-bold">📊 {poll.question}</p>
+        {(isAuthor || canModerate) && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[11px] text-muted hover:text-white"
+          >
+            Bitir
+          </button>
+        )}
+      </div>
+      <div className="mt-2 flex flex-col gap-1.5">
+        {poll.options.map((opt, i) => {
+          const pct =
+            poll.total === 0 ? 0 : Math.round((poll.counts[i] / poll.total) * 100);
+          return voted || poll.myVote !== null ? (
+            <div
+              key={i}
+              className={`relative overflow-hidden rounded-lg px-2 py-1.5 text-xs ${
+                poll.myVote === i ? "ring-1 ring-purple-300" : "bg-white/5"
+              }`}
+            >
+              <div
+                className="absolute inset-y-0 left-0 bg-purple-500/30 transition-all"
+                style={{ width: `${pct}%` }}
+              />
+              <span className="relative flex justify-between gap-2">
+                <span className="truncate font-medium">{opt}</span>
+                <span className="shrink-0 tabular-nums text-muted">
+                  %{pct} · {poll.counts[i]}
+                </span>
+              </span>
+            </div>
+          ) : (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onVote(i)}
+              className="rounded-lg bg-white/5 px-2 py-1.5 text-left text-xs font-medium hover:bg-white/10 active:scale-[0.99]"
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1.5 text-[10px] text-muted">
+        {poll.total} oy
+        {voted ? " · Oy kullandın ✓" : ""}
+      </p>
     </div>
   );
 }

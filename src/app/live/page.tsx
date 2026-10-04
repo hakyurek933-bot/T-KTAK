@@ -5,19 +5,33 @@ import { getCurrentUser } from "@/lib/auth";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { StartLiveForm } from "@/components/StartLiveForm";
+import { LIVE_CATEGORIES } from "@/lib/live-meta";
 import { timeAgo } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Canlı — Taktik" };
 
-export default async function LivePage() {
+function catEmoji(key: string): string {
+  return LIVE_CATEGORIES.find((c) => c.key === key)?.emoji ?? "💬";
+}
+
+export default async function LivePage({
+  searchParams,
+}: PageProps<"/live">) {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
+  const sp = await searchParams;
+  const activeCat =
+    typeof sp.cat === "string" &&
+    LIVE_CATEGORIES.some((c) => c.key === sp.cat)
+      ? sp.cat
+      : null;
 
   let live: {
     id: string;
     title: string;
     likeCount: number;
+    category: string;
     startedAt: Date;
     author: {
       id: string;
@@ -35,7 +49,7 @@ export default async function LivePage() {
   try {
     [live, ended] = await Promise.all([
       prisma.liveRoom.findMany({
-        where: { status: "LIVE" },
+        where: { status: "LIVE", ...(activeCat ? { category: activeCat } : {}) },
         orderBy: { startedAt: "desc" },
         include: {
           author: {
@@ -99,6 +113,30 @@ export default async function LivePage() {
         </p>
       )}
 
+      <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
+        <Link
+          href="/live"
+          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
+            !activeCat ? "bg-white text-black" : "bg-white/10 text-muted hover:text-white"
+          }`}
+        >
+          Tümü
+        </Link>
+        {LIVE_CATEGORIES.map((c) => (
+          <Link
+            key={c.key}
+            href={`/live?cat=${c.key}`}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
+              activeCat === c.key
+                ? "bg-white text-black"
+                : "bg-white/10 text-muted hover:text-white"
+            }`}
+          >
+            {c.emoji} {c.name}
+          </Link>
+        ))}
+      </div>
+
       {live.length === 0 ? (
         <div className="mb-6 rounded-2xl border border-dashed border-white/15 p-8 text-center text-muted">
           <p className="font-semibold text-white">Şu an canlı yayın yok</p>
@@ -116,6 +154,7 @@ export default async function LivePage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{room.title}</p>
                   <p className="flex items-center gap-2 text-xs text-muted">
+                    <span>{catEmoji(room.category)} {room.category}</span>
                     @{room.author.username}
                     <RoleTag role={room.author.role} />
                     <span>{timeAgo(room.startedAt)} başladı</span>

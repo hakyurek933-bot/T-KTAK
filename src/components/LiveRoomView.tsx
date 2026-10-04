@@ -10,6 +10,8 @@ import { DailyBonusButton } from "@/components/DailyBonusButton";
 import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { Caption } from "@/components/Caption";
+import { PkInvite } from "@/components/PkInvite";
+import { LIVE_CATEGORIES } from "@/lib/live-meta";
 import type { LiveSnapshot } from "@/actions/live";
 import type { Role } from "@prisma/client";
 
@@ -46,6 +48,8 @@ export function LiveRoomView({
   currentUsername,
   startedAtISO,
   endedSummary,
+  category,
+  otherRooms,
 }: {
   roomId: string;
   title: string;
@@ -60,6 +64,8 @@ export function LiveRoomView({
   currentUsername: string;
   startedAtISO: string;
   endedSummary: EndedSummary | null;
+  category: string;
+  otherRooms: { id: string; title: string; author: { username: string } }[];
 }) {
   const [chatOpen, setChatOpen] = useState(true);
   const [giftOpen, setGiftOpen] = useState(false);
@@ -120,6 +126,7 @@ export function LiveRoomView({
                 SONA ERDİ
               </span>
             )}
+            <CategoryChip category={category} />
           </div>
           {live && (
             <div className="absolute left-3 top-16 z-20">
@@ -131,6 +138,7 @@ export function LiveRoomView({
           {live && initial && (
             <div className="absolute bottom-[46%] right-2 z-20 flex flex-col items-center gap-3 md:hidden">
               <LiveLikeButton roomId={roomId} initialLikes={initial.likes} />
+              {isAuthor && <PkInvite myRoomId={roomId} rooms={otherRooms} />}
               <RailButton
                 title="Hediye gönder"
                 active={giftOpen}
@@ -173,6 +181,7 @@ export function LiveRoomView({
             {live && initial ? (
               <>
                 <LiveLikeButton roomId={roomId} initialLikes={initial.likes} />
+                {isAuthor && <PkInvite myRoomId={roomId} rooms={otherRooms} />}
                 <button
                   type="button"
                   onClick={handleShare}
@@ -265,6 +274,17 @@ function RailButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Kategori rozeti. */
+function CategoryChip({ category }: { category: string }) {
+  const meta = LIVE_CATEGORIES.find((c) => c.key === category);
+  if (!meta) return null;
+  return (
+    <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
+      {meta.emoji} {meta.name}
+    </span>
   );
 }
 

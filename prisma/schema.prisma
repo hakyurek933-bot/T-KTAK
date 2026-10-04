@@ -37,6 +37,10 @@ enum LogAction {
   REPORT_REVIEW
   BLOCK
   UNBLOCK
+  PK_START
+  PK_END
+  POLL_START
+  LIVE_MUTE
   MESSAGE_SEND
   BAN
   UNBAN
@@ -77,6 +81,13 @@ enum ReportStatus {
   OPEN
   REVIEWED
   DISMISSED
+}
+
+enum PkStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  ENDED
 }
 
 model User {
@@ -123,6 +134,8 @@ model User {
   liveRooms    LiveRoom[]    @relation("LiveAuthor")
   liveMessages LiveMessage[]
   liveViewers  LiveViewer[]
+  liveVotes    LiveVote[]
+  liveMutes    LiveMute[]
 
   // Coin hareketleri ve gönderilen hediyeler
   coinTransactions CoinTransaction[]
@@ -290,6 +303,8 @@ model LiveRoom {
   videoUrl  String
   status    LiveStatus @default(LIVE)
   likeCount Int        @default(0)
+  // Yayın kategorisi: sohbet, oyun, müzik, spor, eğitim, yemek.
+  category  String     @default("sohbet")
   startedAt DateTime   @default(now())
   endedAt   DateTime?
 
@@ -297,6 +312,10 @@ model LiveRoom {
   messages LiveMessage[]
   viewers  LiveViewer[]
   gifts    LiveGift[]
+  polls    LivePoll[]
+  mutes    LiveMute[]
+  pkAsA    PkChallenge[] @relation("PkRoomA")
+  pkAsB    PkChallenge[] @relation("PkRoomB")
 
   @@index([status, startedAt])
 }
@@ -387,6 +406,69 @@ model Block {
   @@unique([blockerId, blockedId])
   @@index([blockerId])
   @@index([blockedId])
+}
+
+// ⚔️ PK yarışması: iki canlı oda 5 dakika kapışır, skor = beğeni + hediye coini.
+model PkChallenge {
+  id         String   @id @default(cuid())
+  roomAId    String
+  roomBId    String
+  status     PkStatus @default(PENDING)
+  baseLikesA Int      @default(0)
+  baseLikesB Int      @default(0)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  roomA LiveRoom @relation("PkRoomA", fields: [roomAId], references: [id], onDelete: Cascade)
+  roomB LiveRoom @relation("PkRoomB", fields: [roomBId], references: [id], onDelete: Cascade)
+
+  @@index([roomAId, status])
+  @@index([roomBId, status])
+}
+
+// 📊 Canlı anket: yayıncı sorar, izleyiciler oylar.
+model LivePoll {
+  id        String   @id @default(cuid())
+  roomId    String
+  question  String
+  options   Json
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  room  LiveRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  votes LiveVote[]
+
+  @@index([roomId, createdAt])
+}
+
+model LiveVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  poll LivePoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([pollId])
+}
+
+// 🔇 Canlı susturma: yayıncı/ekip, taşkın üyeyi süreli susturur.
+model LiveMute {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  until     DateTime
+  createdAt DateTime @default(now())
+
+  room LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
 }
 
 // E-posta doğrulama kodları (6 haneli, 15 dakika geçerli).

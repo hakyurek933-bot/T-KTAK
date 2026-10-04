@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { startLiveAction, type LiveState } from "@/actions/live";
+import { LIVE_CATEGORIES } from "@/lib/live-meta";
 
 export function StartLiveForm({
   videos,
@@ -37,6 +38,21 @@ export function StartLiveForm({
           placeholder="örn. Akşam sohbeti"
           className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
         />
+      </label>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="text-muted">Kategori</span>
+        <select
+          name="category"
+          defaultValue="sohbet"
+          className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
+        >
+          {LIVE_CATEGORIES.map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.emoji} {c.name}
+            </option>
+          ))}
+        </select>
       </label>
 
       <div className="flex rounded-xl border border-white/10 bg-panel-2 p-1 text-sm">

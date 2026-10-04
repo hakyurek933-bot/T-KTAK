@@ -9,6 +9,8 @@ import { createLog } from "@/lib/log";
 import { getAge, LIVE_MIN_AGE } from "@/lib/age";
 import { LIVE_JOIN_TEXT } from "@/lib/utils";
 import { containsProfanity, PROFANITY_ERROR } from "@/lib/badwords";
+import { LIVE_CATEGORIES, MUTE_MINUTES } from "@/lib/live-meta";
+import { getActivePoll, type PollView } from "@/actions/polls";
 import { rateLimit } from "@/lib/ratelimit";
 
 export type LiveState = { error?: string } | null;
@@ -19,6 +21,13 @@ const VIEWER_TTL_SEC = 45;
 const startSchema = z.object({
   title: z.string().trim().min(3, "Başlık en az 3 karakter").max(80),
   videoUrl: z.string().url("Geçerli bir video bağlantısı gerekli").max(2000),
+  category: z
+    .string()
+    .refine(
+      (c) => LIVE_CATEGORIES.some((x) => x.key === c),
+      "Geçersiz kategori"
+    )
+    .optional(),
 });
 
 async function checkLiveTables() {
@@ -43,6 +52,7 @@ export async function startLiveAction(
   const parsed = startSchema.safeParse({
     title: String(formData.get("title") || ""),
     videoUrl: String(formData.get("videoUrl") || "").trim(),
+    category: String(formData.get("category") || "").trim() || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz bilgi" };
@@ -77,6 +87,7 @@ export async function startLiveAction(
       authorId: user.id,
       title: parsed.data.title,
       videoUrl: parsed.data.videoUrl,
+      category: parsed.data.category ?? "sohbet",
       status: "LIVE",
     },
   });
@@ -175,12 +186,84 @@ export async function sendLiveMessageAction(input: {
     return { error: "Yayın sona ermiş" };
   }
 
+  // 🔇 Susturulmuş mu?
+  try {
+    const mute = await prisma.liveMute.findUnique({
+      where: { roomId_userId: { roomId: parsed.data.roomId, userId: user.id } },
+      select: { until: true },
+    });
+    if (mute && mute.until.getTime() > Date.now()) {
+      const mins = Math.max(
+        1,
+        Math.ceil((mute.until.getTime() - Date.now()) / 60000)
+      );
+      return { error: `Bu yayında ${mins} dk susturuldun 🤫` };
+    }
+  } catch {
+    /* susturma tablosu yoksa devam */
+  }
+
   await prisma.liveMessage.create({
     data: {
       roomId: parsed.data.roomId,
       authorId: user.id,
       body: parsed.data.body,
     },
+  });
+
+  return { ok: true };
+}
+
+/** Yayıncının/ekibin üyeyi süreli susturması (varsayılan 10 dk). */
+export async function muteUserAction(
+  roomId: string,
+  username: string,
+  minutes: number = MUTE_MINUTES
+): Promise<{ error?: string; ok?: boolean }> {
+  const user = await requireUser();
+
+  const mins = Math.min(120, Math.max(1, Math.floor(minutes) || MUTE_MINUTES));
+  let room: { authorId: string; status: string } | null = null;
+  try {
+    room = await prisma.liveRoom.findUnique({
+      where: { id: roomId },
+      select: { authorId: true, status: true },
+    });
+  } catch {
+    return { error: "Yayın bulunamadı" };
+  }
+  if (!room || room.status !== "LIVE") return { error: "Yayın sona ermiş" };
+  if (room.authorId !== user.id && !isStaff(user.role)) {
+    return { error: "Yetkin yok" };
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { username: username.toLowerCase() },
+    select: { id: true, username: true, role: true },
+  });
+  if (!target) return { error: "Kullanıcı bulunamadı" };
+  if (target.id === room.authorId) return { error: "Yayıncıyı susturamazsın" };
+  if (isStaff(target.role)) return { error: "Ekip susturulamaz" };
+
+  try {
+    await prisma.liveMute.upsert({
+      where: { roomId_userId: { roomId, userId: target.id } },
+      update: { until: new Date(Date.now() + mins * 60 * 1000) },
+      create: {
+        roomId,
+        userId: target.id,
+        until: new Date(Date.now() + mins * 60 * 1000),
+      },
+    });
+  } catch {
+    return { error: "Susturma kaydedilemedi" };
+  }
+
+  await createLog({
+    action: "LIVE_MUTE",
+    actorId: user.id,
+    targetId: target.id,
+    detail: `@${user.username} @${target.username} susturdu (${mins} dk, yayın)`,
   });
 
   return { ok: true };
@@ -234,6 +317,7 @@ export type LiveSnapshot = {
   viewers: number;
   likes: number;
   balance: number;
+  poll: PollView;
   messages: {
     id: string;
     body: string;
@@ -365,6 +449,7 @@ export async function getLiveSnapshot(roomId: string): Promise<LiveSnapshot | nu
     viewers,
     likes: room.likeCount,
     balance,
+    poll: await getActivePoll(roomId, user.id),
     messages: room.messages.reverse().map((m) => ({
       id: m.id,
       body: m.body,

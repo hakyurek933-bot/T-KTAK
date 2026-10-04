@@ -5,6 +5,7 @@ import { getCurrentUser, isStaff } from "@/lib/auth";
 import { isSameDay } from "@/lib/coins";
 import { Avatar } from "@/components/Avatar";
 import { LiveRoomView, type EndedSummary } from "@/components/LiveRoomView";
+import { PkBanner } from "@/components/PkBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function LiveRoomPage({
     videoUrl: string;
     status: "LIVE" | "ENDED";
     likeCount: number;
+    category: string;
     startedAt: Date;
     endedAt: Date | null;
     author: {
@@ -58,6 +60,7 @@ export default async function LiveRoomPage({
         videoUrl: true,
         status: true,
         likeCount: true,
+        category: true,
         startedAt: true,
         endedAt: true,
         author: {
@@ -144,6 +147,25 @@ export default async function LiveRoomPage({
     }
   }
 
+  // PK daveti için diğer canlı odalar (yalnızca yayıncıya).
+  let otherRooms: { id: string; title: string; author: { username: string } }[] = [];
+  if (room.status === "LIVE" && room.author.id === me.id) {
+    try {
+      otherRooms = await prisma.liveRoom.findMany({
+        where: { status: "LIVE", id: { not: room.id } },
+        orderBy: { startedAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          title: true,
+          author: { select: { username: true } },
+        },
+      });
+    } catch {
+      otherRooms = [];
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-4xl px-3 py-4">
       <Link
@@ -167,7 +189,18 @@ export default async function LiveRoomPage({
         currentUsername={me.username}
         startedAtISO={room.startedAt.toISOString()}
         endedSummary={endedSummary}
+        category={room.category}
+        otherRooms={otherRooms}
       />
+
+      {room.status === "LIVE" && (
+        <div className="mt-3">
+          <PkBanner
+            roomId={room.id}
+            canRespond={room.author.id === me.id || isStaff(me.role)}
+          />
+        </div>
+      )}
 
       {room.status === "LIVE" && watchers.length > 0 && (
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-panel px-3 py-2">
