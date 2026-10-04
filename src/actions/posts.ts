@@ -17,6 +17,7 @@ const postSchema = z.object({
   caption: z.string().max(300, "Açıklama en fazla 300 karakter").optional(),
   duetOfId: z.string().min(1).max(50).optional(),
   mediaType: z.enum(["video", "image"]).optional(),
+  sound: z.string().trim().max(60, "Ses adı en fazla 60 karakter").optional(),
 });
 
 export async function createPostAction(
@@ -30,14 +31,18 @@ export async function createPostAction(
     caption: String(formData.get("caption") || "").trim() || undefined,
     duetOfId: String(formData.get("duetOfId") || "").trim() || undefined,
     mediaType: String(formData.get("mediaType") || "").trim() || undefined,
+    sound: String(formData.get("sound") || "").trim() || undefined,
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message || "Geçersiz veri" };
   }
 
-  // 🐺 Bozkurt Koruma: açıklama filtresi.
+  // 🐺 Bozkurt Koruma: açıklama + ses adı filtresi.
   if (parsed.data.caption && containsProfanity(parsed.data.caption)) {
+    return { error: PROFANITY_ERROR };
+  }
+  if (parsed.data.sound && containsProfanity(parsed.data.sound)) {
     return { error: PROFANITY_ERROR };
   }
 
@@ -66,6 +71,7 @@ export async function createPostAction(
       caption: parsed.data.caption ?? null,
       duetOfId: parsed.data.duetOfId ?? null,
       mediaType: parsed.data.mediaType ?? "video",
+      sound: parsed.data.sound ?? null,
     },
   });
 

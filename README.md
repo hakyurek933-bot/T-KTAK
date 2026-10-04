@@ -33,6 +33,7 @@ Yerli TikTok — kısa video paylaşımı + mesajlaşma platformu. **Kurucu tag'
 | 🔴 Canlı yayın | Kamera (LiveKit) veya video fonu + canlı sohbet + izleyici sayacı + kalp yağmuru + hediyeler + PK + anket + susturma (açmak için 15+ yaş ve 10 takipçi) |
 | 🪙 Taktik Coin | Kayıt bonusu (100), günlük bonus (50), video ödülü (10), canlı hediye geliri; harcama: hediye + video öne çıkarma; admin coin yönetimi |
 | 📷 Fotoğraf modu | Fotoğraf + GIF paylaşımı, akışta fotoğraf kartları |
+| 🎬 Kayıt stüdyosu | Kamerayla video çekme (efekt, ayna, süre, geri sayım) + ses etiketi |
 | 🐺 Bozkurt Koruma | Şikayet sistemi (video/yorum/üye), küfür filtresi, admin güvenlik paneli |
 | 👤 Profil sistemi | Avatar yükleme, bio, takip/takipçi/beğeni sayaçları, Videolar/Beğeniler sekmeleri, profil paylaşma |
 | 👑 Roller | FOUNDER (kurucu), MOD (moderatör), USER (üye) |

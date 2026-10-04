@@ -32,6 +32,7 @@ export type FeedItemData = {
   viewCount: number;
   promotedUntil?: Date | string | null;
   mediaType?: string | null;
+  sound?: string | null;
   duetOf?: { videoUrl: string; author: { username: string } } | null;
   createdAt: Date | string;
   author: {
@@ -319,6 +320,16 @@ export function FeedItem({
               <>
                 <span>📷</span>
                 <span className="truncate">Fotoğraf — @{post.author.username}</span>
+              </>
+            ) : post.sound ? (
+              <>
+                <MusicIcon size={12} />
+                <Link
+                  href={`/sound/${encodeURIComponent(post.sound)}`}
+                  className="truncate font-semibold text-white hover:underline"
+                >
+                  🎵 {post.sound}
+                </Link>
               </>
             ) : (
               <>
