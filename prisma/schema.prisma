@@ -97,6 +97,7 @@ model User {
   email        String?  @unique
   emailVerified Boolean @default(false)
   googleId     String?  @unique
+  kickId       String?  @unique
   birthdate    DateTime?
   passwordHash String
   role         Role     @default(USER)

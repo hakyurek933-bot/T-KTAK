@@ -114,6 +114,15 @@ export function LoginForm() {
         </svg>
         Google ile giriş yap
       </a>
+      <a
+        href="/api/auth/kick"
+        className="flex items-center justify-center gap-2 rounded-xl bg-[#0e0e10] py-3 text-sm font-semibold text-white ring-1 ring-white/10 transition hover:bg-[#1a1a1e]"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#53FC18">
+          <path d="M4 2h4v9.2L16.5 2H21l-6.8 7.6L21.5 22h-4.6l-5-7.1L8 18.4V22H4V2z" />
+        </svg>
+        Kick ile giriş yap
+      </a>
       <button
         type="button"
         onClick={() => setMode("code")}
