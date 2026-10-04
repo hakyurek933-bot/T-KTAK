@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { VideoThumb } from "@/components/VideoThumb";
+import { SoundPreviewButton } from "@/components/SoundPreviewButton";
 import { formatCount } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export default async function SoundPage({ params }: PageProps<"/sound/[name]">) 
     id: string;
     videoUrl: string;
     mediaType: string | null;
+    soundUrl: string | null;
     author: { username: string };
     likes: { id: string }[];
   }[] = [];
@@ -32,6 +34,7 @@ export default async function SoundPage({ params }: PageProps<"/sound/[name]">) 
         id: true,
         videoUrl: true,
         mediaType: true,
+        soundUrl: true,
         author: { select: { username: true } },
         likes: { select: { id: true } },
       },
@@ -40,6 +43,8 @@ export default async function SoundPage({ params }: PageProps<"/sound/[name]">) 
     posts = [];
   }
   if (posts.length === 0) notFound();
+
+  const previewUrl = posts.map((p) => p.soundUrl).find(Boolean) ?? null;
 
   return (
     <div className="mx-auto w-full max-w-3xl px-3 py-5">
@@ -52,6 +57,11 @@ export default async function SoundPage({ params }: PageProps<"/sound/[name]">) 
           <p className="text-sm text-muted">
             {posts.length} video bu sesi kullanıyor
           </p>
+          {previewUrl && (
+            <div className="mt-2">
+              <SoundPreviewButton url={previewUrl} />
+            </div>
+          )}
         </div>
       </div>
       <Link

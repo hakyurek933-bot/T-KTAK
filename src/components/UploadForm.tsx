@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { createPostAction, type PostState } from "@/actions/posts";
 import { MAX_VIDEO_BYTES, MAX_IMAGE_BYTES, probeFilePlayable } from "@/lib/video-probe";
 import { VideoRecorder } from "@/components/VideoRecorder";
+import { SoundPicker, type PickedSong } from "@/components/SoundPicker";
 
 export function UploadForm({
   duetOf = null,
@@ -19,7 +20,7 @@ export function UploadForm({
   const [tab, setTab] = useState<"file" | "link" | "record">("file");
   const [videoUrl, setVideoUrl] = useState("");
   const [mediaType, setMediaType] = useState<"video" | "image">("video");
-  const [sounds, setSounds] = useState<{ name: string; count: number }[]>([]);
+  const [song, setSong] = useState<PickedSong>(null);
   const [uploading, setUploading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -27,16 +28,6 @@ export function UploadForm({
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  // Trend sesleri bir kez çek (ses alanında öneri).
-  useEffect(() => {
-    fetch("/api/sounds")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d && Array.isArray(d.sounds)) setSounds(d.sounds.slice(0, 8));
-      })
-      .catch(() => {});
-  }, []);
 
   async function handleFile(file: File) {
     setUploadError(null);
@@ -178,6 +169,7 @@ export function UploadForm({
 
       {tab === "record" ? (
         <VideoRecorder
+          song={song}
           onDone={(file) => {
             setTab("file");
             handleFile(file);
@@ -315,22 +307,12 @@ export function UploadForm({
             className="resize-none rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <div className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted">🎵 Ses (opsiyonel)</span>
-          <input
-            name="sound"
-            maxLength={60}
-            placeholder="Bu videodaki sesin adı..."
-            list="taktik-sounds"
-            autoComplete="off"
-            className="rounded-xl border border-white/10 bg-panel-2 px-3 py-2.5 outline-none focus:border-brand"
-          />
-          <datalist id="taktik-sounds">
-            {sounds.map((s) => (
-              <option key={s.name} value={s.name} />
-            ))}
-          </datalist>
-        </label>
+          <SoundPicker value={song} onPick={setSong} />
+          <input type="hidden" name="sound" value={song?.name ?? ""} />
+          <input type="hidden" name="soundUrl" value={song?.url ?? ""} />
+        </div>
         <button
           disabled={pending || !videoUrl}
           className="rounded-xl bg-brand py-2.5 font-semibold text-white transition hover:bg-brand/90 disabled:opacity-50"

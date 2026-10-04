@@ -163,6 +163,8 @@ model Post {
   mediaType String   @default("video")
   // Ses adı (trend sesler sayfası için).
   sound     String?
+  // Ses önizleme bağlantısı (dokununca çalar).
+  soundUrl  String?
   // Coin ile öne çıkarma bitişi (bu tarihe kadar Keşfet'te üstte).
   promotedUntil DateTime?
   // Düet: bu video başka bir videoya tepki olarak çekildiyse orijinali.

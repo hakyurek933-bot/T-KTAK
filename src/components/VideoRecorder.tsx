@@ -33,15 +33,23 @@ function pickMime(): string {
 
 /** TikTok tarzı kamera kaydı: efekt + ayna + süre + geri sayım.
  *  Efekt canvas'a işlenir, kayıtlı videoda kalır. */
-export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
+export function VideoRecorder({
+  onDone,
+  song = null,
+}: {
+  onDone: (file: File) => void;
+  song?: { name: string; url: string } | null;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const musicRef = useRef<HTMLAudioElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const rafRef = useRef(0);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const startAtRef = useRef(0);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const [started, setStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,10 +64,16 @@ export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
 
   // Kapanışta her şeyi durdur (durum yazılmaz).
   useEffect(() => {
+    const musicEl = musicRef.current;
     return () => {
       cancelAnimationFrame(rafRef.current);
       timersRef.current.forEach(clearTimeout);
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      audioCtxRef.current?.close().catch(() => {});
+      if (musicEl) {
+        musicEl.pause();
+        musicEl.removeAttribute("src");
+      }
     };
   }, []);
 
@@ -126,7 +140,39 @@ export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
     limitRef.current = maxDur;
     const mime = pickMime();
     const out: MediaStream = canvas.captureStream(30);
-    mic.getAudioTracks().forEach((t) => out.addTrack(t));
+    // Ses miksi: mikrofon + seçiliyse müzik (şarkıyla çek).
+    try {
+      const AC =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      const ac = new AC();
+      audioCtxRef.current = ac;
+      void ac.resume().catch(() => {});
+      const dest = ac.createMediaStreamDestination();
+      const micSrc = ac.createMediaStreamSource(mic);
+      micSrc.connect(dest);
+      const musicEl = musicRef.current;
+      if (song?.url && musicEl) {
+        musicEl.src = song.url;
+        musicEl.loop = true;
+        musicEl.crossOrigin = "anonymous";
+        musicEl.volume = 1;
+        void musicEl.play().catch(() => {});
+        try {
+          const musSrc = ac.createMediaElementSource(musicEl);
+          const gain = ac.createGain();
+          gain.gain.value = 0.8;
+          musSrc.connect(gain);
+          gain.connect(dest);
+        } catch {
+          /* müzik karıştırılamazsa yalnızca mikrofon */
+        }
+      }
+      dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
+    } catch {
+      mic.getAudioTracks().forEach((t) => out.addTrack(t));
+    }
     const rec = new MediaRecorder(out, mime ? { mimeType: mime } : undefined);
     chunksRef.current = [];
     rec.ondataavailable = (e) => {
@@ -137,6 +183,10 @@ export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
       const file = new File(chunksRef.current, `taktik-kayit-${nowMs()}.${ext}`, {
         type: mime ? mime.split(";")[0] : "video/webm",
       });
+      const m = musicRef.current;
+      if (m) m.pause();
+      audioCtxRef.current?.close().catch(() => {});
+      audioCtxRef.current = null;
       setPhase("idle");
       setElapsed(0);
       onDone(file);
@@ -180,6 +230,8 @@ export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
   function stopRecording() {
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
+    const m = musicRef.current;
+    if (m) m.pause();
     recRef.current?.stop();
   }
 
@@ -197,6 +249,7 @@ export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
     <div className="flex flex-col gap-3">
       <div className="relative aspect-[9/16] max-h-[52vh] w-full overflow-hidden rounded-2xl bg-black">
         <video ref={videoRef} playsInline muted className="hidden" />
+        <audio ref={musicRef} preload="auto" className="hidden" />
         <canvas ref={canvasRef} className="h-full w-full object-contain" />
         {!started && !error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 p-6 text-center">
@@ -223,6 +276,7 @@ export function VideoRecorder({ onDone }: { onDone: (file: File) => void }) {
           <span className="absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-sm font-bold tabular-nums text-white backdrop-blur">
             <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
             0:{String(left).padStart(2, "0")}
+            {song && <span className="max-w-28 truncate text-[11px] font-medium text-amber-300">🎵 {song.name}</span>}
           </span>
         )}
       </div>

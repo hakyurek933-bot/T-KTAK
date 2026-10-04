@@ -33,6 +33,7 @@ export type FeedItemData = {
   promotedUntil?: Date | string | null;
   mediaType?: string | null;
   sound?: string | null;
+  soundUrl?: string | null;
   duetOf?: { videoUrl: string; author: { username: string } } | null;
   createdAt: Date | string;
   author: {
@@ -75,6 +76,8 @@ export function FeedItem({
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hearts, setHearts] = useState<number[]>([]);
+  const [soundPlaying, setSoundPlaying] = useState(false);
+  const soundRef = useRef<HTMLAudioElement>(null);
   const boosted = isActivePromo(post.promotedUntil);
   const isImage = post.mediaType === "image";
 
@@ -324,12 +327,39 @@ export function FeedItem({
             ) : post.sound ? (
               <>
                 <MusicIcon size={12} />
+                {post.soundUrl && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = soundRef.current;
+                      if (!el) return;
+                      if (soundPlaying) {
+                        el.pause();
+                        setSoundPlaying(false);
+                      } else {
+                        el.src = post.soundUrl as string;
+                        el.play().catch(() => {});
+                        setSoundPlaying(true);
+                      }
+                    }}
+                    className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/15 text-[10px] hover:bg-white/25"
+                    title="Sesi dinle"
+                  >
+                    {soundPlaying ? "⏸" : "▶"}
+                  </button>
+                )}
                 <Link
                   href={`/sound/${encodeURIComponent(post.sound)}`}
                   className="truncate font-semibold text-white hover:underline"
                 >
                   🎵 {post.sound}
                 </Link>
+                <audio
+                  ref={soundRef}
+                  onEnded={() => setSoundPlaying(false)}
+                  onPause={() => setSoundPlaying(false)}
+                  className="hidden"
+                />
               </>
             ) : (
               <>

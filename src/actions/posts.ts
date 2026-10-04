@@ -18,6 +18,7 @@ const postSchema = z.object({
   duetOfId: z.string().min(1).max(50).optional(),
   mediaType: z.enum(["video", "image"]).optional(),
   sound: z.string().trim().max(60, "Ses adı en fazla 60 karakter").optional(),
+  soundUrl: z.string().url().max(2000).optional(),
 });
 
 export async function createPostAction(
@@ -32,6 +33,7 @@ export async function createPostAction(
     duetOfId: String(formData.get("duetOfId") || "").trim() || undefined,
     mediaType: String(formData.get("mediaType") || "").trim() || undefined,
     sound: String(formData.get("sound") || "").trim() || undefined,
+    soundUrl: String(formData.get("soundUrl") || "").trim() || undefined,
   });
 
   if (!parsed.success) {
@@ -72,6 +74,7 @@ export async function createPostAction(
       duetOfId: parsed.data.duetOfId ?? null,
       mediaType: parsed.data.mediaType ?? "video",
       sound: parsed.data.sound ?? null,
+      soundUrl: parsed.data.soundUrl ?? null,
     },
   });
 
