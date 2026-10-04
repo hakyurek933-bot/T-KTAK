@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { LiveChat } from "@/components/LiveChat";
 import { LiveLikeButton } from "@/components/LiveLikeButton";
@@ -11,10 +12,24 @@ import { Avatar } from "@/components/Avatar";
 import { RoleTag } from "@/components/RoleTag";
 import { Caption } from "@/components/Caption";
 import { PkInvite } from "@/components/PkInvite";
-import { LiveStage } from "@/components/LiveStage";
 import { LIVE_CATEGORIES } from "@/lib/live-meta";
 import type { LiveSnapshot } from "@/actions/live";
 import type { Role } from "@prisma/client";
+
+// Ağır kamera kitaplığı yalnızca oda açılınca yüklenir (mobil dostu).
+const LiveStage = dynamic(
+  () => import("@/components/LiveStage").then((m) => m.LiveStage),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid h-full w-full place-items-center bg-black">
+        <p className="animate-pulse text-sm font-semibold text-white">
+          📷 Kamera yükleniyor...
+        </p>
+      </div>
+    ),
+  }
+);
 
 type RoomAuthor = {
   id: string;
