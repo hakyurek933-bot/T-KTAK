@@ -40,26 +40,48 @@ if (!appUrl) {
   process.exit(0);
 }
 
-function run(label, cmd, args, url) {
+function sleepSync(ms) {
+  // Neon soğuk başlatması için bekleme (taşınabilir, harici komut yok).
   try {
-    console.log(`→ ${label}`);
-    const res = spawnSync(cmd, args, {
-      stdio: "inherit",
-      env: { ...process.env, DATABASE_URL: url },
-      shell: process.platform === "win32",
-    });
-    if (res.status !== 0) {
+    spawnSync(
+      process.execPath,
+      ["-e", `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ${ms});`],
+      { stdio: "ignore" }
+    );
+  } catch {
+    /* yoksay */
+  }
+}
+
+function run(label, cmd, args, url, retries = 2) {
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    try {
+      console.log(`→ ${label} (deneme ${attempt}/${retries + 1})`);
+      const res = spawnSync(cmd, args, {
+        stdio: "inherit",
+        env: { ...process.env, DATABASE_URL: url },
+        shell: process.platform === "win32",
+      });
+      if (res.status === 0) return true;
       console.error(`\n❌❌❌ ${label} BAŞARISIZ OLDU (kod ${res.status}).`);
+      if (attempt <= retries) {
+        console.log("Tekrar denenecek (15 sn bekleniyor, Neon uyanıyor olabilir)...");
+        sleepSync(15000);
+        continue;
+      }
       console.error(
         "Veritabanı bağlı ama şema uygulanamadı. Deploy durduruluyor — " +
           "yoksa site eski şemayla 500 verir.\n"
       );
       process.exit(res.status ?? 1);
+    } catch (err) {
+      console.error(`\n❌❌❌ ${label} hata verdi:`, err?.message ?? err);
+      if (attempt <= retries) {
+        sleepSync(15000);
+        continue;
+      }
+      process.exit(1);
     }
-    return true;
-  } catch (err) {
-    console.error(`\n❌❌❌ ${label} hata verdi:`, err?.message ?? err);
-    process.exit(1);
   }
 }
 
