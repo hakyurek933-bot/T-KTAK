@@ -40,6 +40,27 @@ if (!appUrl) {
   process.exit(0);
 }
 
+const URL_VARS = [
+  "DATABASE_URL",
+  "POSTGRES_PRISMA_URL",
+  "POSTGRES_URL",
+  "NEON_DATABASE_URL",
+  "DATABASE_URL_UNPOOLED",
+  "POSTGRES_URL_NON_POOLING",
+  "DIRECT_URL",
+];
+console.log("\nDB ortam değişkenleri (değerler gizli, yalnızca var/yok):");
+for (const n of URL_VARS) {
+  console.log(`  ${n}: ${process.env[n]?.trim() ? "tanımlı" : "yok"}`);
+}
+const poolerRe = /pooler|pgbouncer=true/i;
+console.log(`  havuzlu bağlantı (app): ${poolerRe.test(appUrl) ? "EVET" : "hayır"}`);
+console.log(
+  `  direkt bağlantı: ${
+    directUrl === appUrl ? "AYNI (havuzsuz değişken yok)" : "ayrı tanımlı"
+  }\n`
+);
+
 function sleepSync(ms) {
   // Neon soğuk başlatması için bekleme (taşınabilir, harici komut yok).
   try {
@@ -94,9 +115,14 @@ run("Veritabanı şeması uygulanıyor (prisma db push)", "npx", [
 
 if (directUrl === appUrl && /pooler|pgbouncer=true/i.test(appUrl)) {
   console.warn(
-    "⚠ Bağlantı havuzlu (pooler) görünüyor. Şema kurulumu için havuzsuz " +
-      "bağlantıyı DATABASE_URL_UNPOOLED olarak tanımlayın."
+    "\n⚠ Bağlantı havuzlu (pooler); `prisma db push` havuzda ÇALIŞMAZ. " +
+      "Şema adımı ATLANIYOR, seed çalıştırılıyor. Kalıcı çözüm: havuzsuz " +
+      "bağlantıyı DATABASE_URL_UNPOOLED olarak tanımlayın.\n" +
+      "NOT: Uygulama eksik kolonlara dayanıklı yazıldı; site çalışmaya devam eder.\n"
   );
+  run("Kurucu hesabı oluşturuluyor (seed)", "node", ["prisma/seed.mjs"], appUrl);
+  console.log("✓ Veritabanı kurulum adımı tamamlandı (şema atlandı).");
+  process.exit(0);
 }
 
 run("Kurucu hesabı oluşturuluyor (seed)", "node", ["prisma/seed.mjs"], appUrl);
